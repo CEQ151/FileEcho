@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FileEcho - File Manager Web GUI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-network-wired"></i>
+            <h1>FileEcho</h1>
+        </div>
+        <div class="server-status">
+            <span id="status-indicator" class="status-indicator active"></span>
+            <span id="server-status">Checking...</span>
+            <span id="api-status" style="margin-left: 10px; font-size: 0.8em; opacity: 0.8;"></span>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <h3><i class="fas fa-chart-pie"></i> Info</h3>
+                <div class="info-box">
+                    <p><i class="fas fa-folder-open"></i> <span id="current-path">No path selected</span></p>
+                    <p><i class="fas fa-file-alt"></i> <span id="file-count">0</span> Files</p>
+                    <p><i class="fas fa-hdd"></i> <span id="total-size">0 B</span></p>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-sliders-h"></i> Settings</h3>
+                <div class="settings">
+                    <div class="setting-item">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="show-size" checked>
+                            <span class="checkbox-custom"></span>
+                            Show File Size
+                        </label>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <label for="max-depth">Max Depth (-1 for unlimited)</label>
+                        <input type="number" id="max-depth" value="-1" min="-1">
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="exclude-patterns">Exclude Patterns (comma separated)</label>
+                        <input type="text" id="exclude-patterns" placeholder="node_modules, .git, temp">
+                        <small>e.g.: .git, node_modules, *.tmp</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fas fa-eraser"></i> Cleanup</h3>
+                <div class="settings">
+                    <button id="clear-btn" class="btn btn-secondary" style="width: 100%">
+                        <i class="fas fa-broom"></i> Clear Results
+                    </button>
+                    <button id="clear-all-btn" class="btn btn-icon" style="color: var(--danger-color); width: 100%">
+                        <i class="fas fa-trash-alt"></i> Reset All Data
+                    </button>
+                </div>
+             </div>
+        </aside>
+
+        <main class="main-content content">
+            
+            <div class="path-input">
+                <label for="directory-path">Target Directory Path (Where to Echo)</label>
+                <div class="input-group">
+                    <input type="text" id="directory-path" placeholder="Enter target absolute path (e.g., D:/Backup)">
+                </div>
+            </div>
+
+            <div class="path-input mt-3">
+                <label for="source-path">Source Path to Echo (File or Folder)</label>
+                <div class="input-group">
+                    <input type="text" id="source-path" placeholder="Enter source absolute path (e.g., C:/MyData)">
+                    <button id="echo-btn" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i> Echo (Clone)
+                    </button>
+                </div>
+                <small class="text-muted">Uses local path reference for instant cloning.</small>
+            </div>
+
+            <div class="content-header mt-4">
+                <h2><i class="fas fa-stream"></i> File Structure</h2>
+                <div class="actions">
+                    <button id="generate-tree-btn" class="btn btn-success">
+                        <i class="fas fa-sync"></i> Refresh Tree
+                    </button>
+                    <button id="copy-btn" class="btn btn-secondary">
+                        <i class="fas fa-copy"></i> Copy
+                    </button>
+                    <button id="download-btn" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> Download .txt
+                    </button>
+                </div>
+            </div>
+
+            <div class="results">
+                <div class="results-header">
+                    <h3>Tree View Preview</h3>
+                </div>
+                <div class="tree-container">
+                    <pre id="tree-output">Select a folder and click "Scan" to see the file structure here.</pre>
+                </div>
+            </div>
+
+            <div class="file-list">
+                <h3><i class="fas fa-list"></i> File Details</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Size</th>
+                                <th>Depth</th>
+                            </tr>
+                        </thead>
+                        <tbody id="file-table-body">
+                            <tr>
+                                <td colspan="4" class="empty-message">No files scanned yet</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 FileEcho Manager. Powered by C++ & Webview.</p>
+    </footer>
+
+    <div id="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
