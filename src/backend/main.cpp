@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
         w.set_title("FileEcho - Scan Deep, Echo Clear");
         
         // 这些枚举现在应该能被识别了
-        w.set_size(1000, 700, WEBVIEW_HINT_NONE); 
+        w.set_size(1200, 800, WEBVIEW_HINT_NONE); 
         w.set_size(800, 600, WEBVIEW_HINT_MIN);
 
         std::string url = "http://localhost:" + std::to_string(port);

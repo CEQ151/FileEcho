@@ -12,9 +12,13 @@ class FileManagerApp {
     }
     
     initElements() {
+        // Sidebar elements
+        this.sidebar = document.getElementById('sidebar');
+        this.sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+        this.githubBtn = document.getElementById('github-btn');
+
         // Settings elements
         this.showSizeCheckbox = document.getElementById('show-size');
-        // humanReadableCheckbox removed
         this.maxDepthInput = document.getElementById('max-depth');
         this.excludePatternsInput = document.getElementById('exclude-patterns');
         
@@ -27,8 +31,9 @@ class FileManagerApp {
         this.generateTreeBtn = document.getElementById('generate-tree-btn');
         this.downloadBtn = document.getElementById('download-btn');
         this.copyBtn = document.getElementById('copy-btn');
-        this.clearBtn = document.getElementById('clear-btn'); // Only clears tree view
-        this.clearAllBtn = document.getElementById('clear-all-btn'); // Clears everything
+        this.clearBtn = document.getElementById('clear-btn'); 
+        this.clearAllBtn = document.getElementById('clear-all-btn'); 
+        this.scanBtn = document.getElementById('scan-btn'); // New Scan button in sidebar
         
         // Input elements
         this.directoryPathInput = document.getElementById('directory-path');
@@ -43,12 +48,17 @@ class FileManagerApp {
     }
     
     initEventListeners() {
+        // Sidebar Toggle
+        this.sidebarToggleBtn.addEventListener('click', () => this.toggleSidebar());
+
+        // GitHub Button
+        this.githubBtn.addEventListener('click', () => {
+            this.openItem('https://github.com/CEQ151/fileecho');
+        });
+
         // Button events
-        
-        // "Generate Tree" now effectively means "Apply Settings & Regenerate"
-        // Since filtering happens at scan time, we need to rescan to apply depth/excludes
+        this.scanBtn.addEventListener('click', () => this.scanDirectory(true));
         this.generateTreeBtn.addEventListener('click', () => this.scanDirectory(true));
-        
         this.downloadBtn.addEventListener('click', () => this.downloadTree());
         this.copyBtn.addEventListener('click', () => this.copyTreeToClipboard());
         this.clearBtn.addEventListener('click', () => this.clearResults());
@@ -65,6 +75,45 @@ class FileManagerApp {
         [this.showSizeCheckbox, this.maxDepthInput, this.excludePatternsInput].forEach(el => {
             el.addEventListener('change', () => this.saveState());
         });
+        
+        // Resizer logic
+        const resizer = document.getElementById('resizer');
+        const treeSection = document.querySelector('.tree-section');
+        const listSection = document.querySelector('.list-section');
+
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+
+            const offsetRight = document.body.offsetWidth - e.clientX;
+            const newTreeWidth = document.body.offsetWidth - offsetRight;
+
+            if (newTreeWidth > 200 && newTreeWidth < 500) {
+                treeSection.style.width = `${newTreeWidth}px`;
+                listSection.style.flex = '1';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.cursor = '';
+        });
+    }
+
+    toggleSidebar() {
+        this.sidebar.classList.toggle('collapsed');
+        const icon = this.sidebarToggleBtn.querySelector('i');
+        if (this.sidebar.classList.contains('collapsed')) {
+            icon.className = 'fas fa-chevron-right'; // 收起时显示向右箭头
+        } else {
+            icon.className = 'fas fa-bars'; // 展开时显示菜单图标
+        }
     }
     
     // Upload functions removed

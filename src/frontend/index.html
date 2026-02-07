@@ -10,128 +10,160 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <header class="header">
-        <div class="logo">
-            <i class="fas fa-network-wired"></i>
-            <h1>FileEcho</h1>
-        </div>
-        <div class="server-status">
-            <span id="status-indicator" class="status-indicator active"></span>
-            <span id="server-status">Checking...</span>
-            <span id="api-status" style="margin-left: 10px; font-size: 0.8em; opacity: 0.8;"></span>
-        </div>
-    </header>
-
-    <div class="container">
-        
-        <aside class="sidebar">
-            <div class="sidebar-section">
-                <h3><i class="fas fa-chart-pie"></i> Info</h3>
-                <div class="info-box">
-                    <p><i class="fas fa-folder-open"></i> <span id="current-path">No path selected</span></p>
-                    <p><i class="fas fa-file-alt"></i> <span id="file-count">0</span> Files</p>
-                    <p><i class="fas fa-hdd"></i> <span id="total-size">0 B</span></p>
+    <div class="app-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-network-wired"></i>
+                    <span class="logo-text">FileEcho</span>
+                    <span class="badge rounded-pill bg-primary">v1.0.3</span>
                 </div>
             </div>
 
-            <div class="sidebar-section">
-                <h3><i class="fas fa-sliders-h"></i> Settings</h3>
-                <div class="settings">
-                    <div class="setting-item">
-                        <label class="checkbox-label">
+            <div class="sidebar-scroll">
+                <div class="panel info-panel">
+                    <div class="panel-header">
+                        <i class="fas fa-chart-pie"></i> File Info
+                    </div>
+                    <div class="info-content">
+                        <div class="info-item" title="Current Path">
+                            <i class="fas fa-folder-open"></i>
+                            <span id="current-path" class="text-ellipsis">No path selected</span>
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-file-alt"></i>
+                            <span id="file-count">0</span> Files
+                        </div>
+                        <div class="info-item">
+                            <i class="fas fa-hdd"></i>
+                            <span id="total-size">0 B</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-search"></i> Target Address
+                    </div>
+                    <div class="input-group-compact d-flex gap-2">
+                        <input type="text" id="directory-path" class="form-control-compact" placeholder="Absolute path...">
+                        <button id="scan-btn" class="btn btn-primary btn-sm btn-icon-only">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-sliders-h"></i> Settings
+                    </div>
+                    <div class="settings-grid">
+                        <div class="setting-row">
+                            <label for="max-depth">Max Depth</label>
+                            <input type="number" id="max-depth" value="-1" min="-1" class="form-control-compact">
+                        </div>
+                        <div class="setting-row">
+                            <label for="exclude-patterns">Excludes</label>
+                            <input type="text" id="exclude-patterns" placeholder="node_modules, .git" class="form-control-compact">
+                        </div>
+                        <div class="setting-row checkbox-row">
                             <input type="checkbox" id="show-size" checked>
-                            <span class="checkbox-custom"></span>
-                            Show File Size
-                        </label>
+                            <label for="show-size">Show Size</label>
+                        </div>
                     </div>
-                    
-                    <div class="setting-item">
-                        <label for="max-depth">Max Depth (-1 for unlimited)</label>
-                        <input type="number" id="max-depth" value="-1" min="-1">
-                    </div>
+                </div>
 
-                    <div class="setting-item">
-                        <label for="exclude-patterns">Exclude Patterns (comma separated)</label>
-                        <input type="text" id="exclude-patterns" placeholder="node_modules, .git, temp">
-                        <small>e.g.: .git, node_modules, *.tmp</small>
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-trash-alt"></i> Cleanup
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button id="clear-btn" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-broom"></i> Clear Results
+                        </button>
+                        <button id="clear-all-btn" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash"></i> Reset All Data
+                        </button>
                     </div>
                 </div>
             </div>
 
-            <div class="sidebar-section">
-                <h3><i class="fas fa-eraser"></i> Cleanup</h3>
-                <div class="settings">
-                    <button id="clear-btn" class="btn btn-secondary" style="width: 100%">
-                        <i class="fas fa-broom"></i> Clear Results
-                    </button>
-                    <button id="clear-all-btn" class="btn btn-icon" style="color: var(--danger-color); width: 100%">
-                        <i class="fas fa-trash-alt"></i> Reset All Data
-                    </button>
-                </div>
-             </div>
+            <div class="sidebar-footer">
+                <button id="github-btn" class="btn btn-github w-100">
+                    <i class="fab fa-github"></i> View on GitHub
+                </button>
+            </div>
         </aside>
 
-        <main class="main-content content">
-            
-            <div class="path-input">
-                <label for="directory-path">Directory Path to Scan</label>
-                <div class="input-group">
-                    <input type="text" id="directory-path" placeholder="Enter absolute path (e.g., C:/Projects)">
-                </div>
-            </div>
-
-            <div class="content-header mt-4">
-                <h2><i class="fas fa-stream"></i> File Structure</h2>
-                <div class="actions">
-                    <button id="generate-tree-btn" class="btn btn-success">
-                        <i class="fas fa-sync"></i> Refresh Tree
-                    </button>
-                    <button id="copy-btn" class="btn btn-secondary">
-                        <i class="fas fa-copy"></i> Copy
-                    </button>
-                    <button id="download-btn" class="btn btn-secondary">
-                        <i class="fas fa-download"></i> Download .txt
+        <!-- Main Content -->
+        <main class="main-content" id="main-content">
+            <header class="top-bar">
+                <div class="top-bar-left">
+                    <button id="sidebar-toggle-btn" class="toggle-btn-main">
+                        <i class="fas fa-bars"></i>
                     </button>
                 </div>
-            </div>
-
-            <div class="results">
-                <div class="results-header">
-                    <h3>Tree View Preview</h3>
+                <div class="top-bar-right">
+                    <div class="status-bar">
+                        <span id="status-indicator" class="status-indicator active"></span>
+                        <span id="server-status">Connected</span>
+                        <span id="api-status" class="api-version"></span>
+                    </div>
                 </div>
-                <div class="tree-container">
-                    <pre id="tree-output">Select a folder and click "Scan" to see the file structure here.</pre>
-                </div>
-            </div>
+            </header>
 
-            <div class="file-list">
-                <h3><i class="fas fa-list"></i> File Details</h3>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Type</th>
-                                <th>Size</th>
-                                <th>Depth</th>
-                            </tr>
-                        </thead>
-                        <tbody id="file-table-body">
-                            <tr>
-                                <td colspan="4" class="empty-message">No files scanned yet</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            <div class="content-split">
+                <!-- Left: Tree View -->
+                <section class="split-column tree-section">
+                    <div class="column-header">
+                        <h3><i class="fas fa-stream"></i> File Tree</h3>
+                    </div>
+                    <div class="tree-viewport">
+                        <pre id="tree-output">Enter path in sidebar and scan.</pre>
+                    </div>
+                    <div class="column-actions-bar">
+                        <button id="generate-tree-btn" class="btn btn-outline-secondary btn-sm flex-fill">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button id="copy-btn" class="btn btn-outline-secondary btn-sm flex-fill">
+                            <i class="fas fa-copy"></i> Copy
+                        </button>
+                        <button id="download-btn" class="btn btn-outline-secondary btn-sm flex-fill">
+                            <i class="fas fa-download"></i> Download
+                        </button>
+                    </div>
+                </section>
 
+                <!-- Resizer -->
+                <div id="resizer" class="resizer"></div>
+
+                <!-- Right: File List -->
+                <section class="split-column list-section">
+                    <div class="column-header">
+                        <h3><i class="fas fa-list"></i> File Details</h3>
+                    </div>
+                    <div class="table-viewport">
+                        <table class="table table-sm table-hover sticky-header">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Size</th>
+                                    <th>Depth</th>
+                                </tr>
+                            </thead>
+                            <tbody id="file-table-body">
+                                <tr>
+                                    <td colspan="4" class="empty-message">No files scanned yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
-
-    <footer class="footer">
-        <p>&copy; 2026 FileEcho Manager. Powered by C++ & Webview.</p>
-    </footer>
 
     <div id="toast-container"></div>
 
