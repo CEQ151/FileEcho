@@ -7,10 +7,14 @@
 
 #include "webserver.hpp"
 #include "utils.hpp"     // 使用新工具
+#ifdef _WIN32
+#include <shellapi.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <iomanip>
 #include <filesystem>
+#include <algorithm>
 
 using json = nlohmann::json;
 using namespace std;
@@ -88,6 +92,10 @@ void WebServer::setup_routes() {
     
     server_->Get("/api/info", [this](const httplib::Request& req, httplib::Response& res) {
         handle_api_info(req, res);
+    });
+
+    server_->Post("/api/open", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_open(req, res);
     });
 }
 
@@ -194,6 +202,7 @@ void WebServer::handle_scan(const httplib::Request& req, httplib::Response& res)
         for (const auto& f : files) {
             response["files"].push_back({
                 {"name", f.name},
+                {"path", f.path},
                 {"is_directory", f.is_directory},
                 {"depth", f.depth},
                 {"size", f.size},
@@ -258,4 +267,45 @@ void WebServer::handle_api_info(const httplib::Request& req, httplib::Response& 
         }}
     };
     res.set_content(info.dump(), "application/json");
+}
+
+void WebServer::handle_open(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto body = json::parse(req.body);
+        string path = body.value("path", "");
+        
+        if (path.empty()) {
+            res.set_content(json{{"success", false}, {"message", "Empty path"}}.dump(), "application/json");
+            return;
+        }
+
+        // 【关键修复 1】: 强制将所有 '/' 替换为 '\'
+        // Windows Shell API 严格要求使用反斜杠
+        std::replace(path.begin(), path.end(), '/', '\\');
+
+        // 【关键修复 2】: 初始化 COM 组件
+        // 后台线程默认没有 COM 环境，必须手动初始化才能调用 ShellExecute
+        HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+        wstring wpath = Utils::ToWString(path);
+        
+        // 调用系统 Shell 打开文件或文件夹
+        // SW_SHOWNORMAL 确保窗口正常显示
+        HINSTANCE result = ShellExecuteW(NULL, L"open", wpath.c_str(), NULL, NULL, SW_SHOWNORMAL);
+        
+        // 操作完成后清理 COM
+        if (SUCCEEDED(hr)) {
+            CoUninitialize();
+        }
+
+        // ShellExecute 返回值大于 32 表示成功
+        if ((INT_PTR)result > 32) {
+            res.set_content(json{{"success", true}}.dump(), "application/json");
+        } else {
+            // 获取错误代码方便调试
+            res.set_content(json{{"success", false}, {"message", "ShellExecute failed code: " + to_string((INT_PTR)result)}}.dump(), "application/json");
+        }
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
 }

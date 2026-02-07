@@ -39,6 +39,7 @@ private:
     void handle_tree(const httplib::Request& req, httplib::Response& res);
     void handle_download(const httplib::Request& req, httplib::Response& res);
     void handle_api_info(const httplib::Request& req, httplib::Response& res);
+    void handle_open(const httplib::Request& req, httplib::Response& res);
     
     // 服务器实例
     std::unique_ptr<httplib::Server> server_;

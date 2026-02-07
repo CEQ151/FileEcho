@@ -71,6 +71,24 @@ class FileManagerApp {
     }
     
     // Upload functions removed
+
+    async openItem(path) {
+        try {
+            const response = await fetch(`${this.apiBaseUrl}/api/open`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ path: path })
+            });
+            const result = await response.json();
+            if (!result.success) {
+                this.showToast(`Failed to open: ${result.message}`, 'error');
+            }
+        } catch (error) {
+            this.showToast(`Error opening item: ${error.message}`, 'error');
+        }
+    }
     
     async scanDirectory(autoGenerate = true) {
         const path = this.directoryPathInput.value.trim();
@@ -398,7 +416,24 @@ class FileManagerApp {
             `;
         });
         
-        this.fileTableBody.innerHTML = html;
+       this.fileTableBody.innerHTML = html;
+
+        // Add event listeners to rows
+        const rows = this.fileTableBody.querySelectorAll('tr');
+        rows.forEach((row, index) => {
+            if (this.currentFiles[index]) {
+                // 绑定双击事件
+                row.addEventListener('dblclick', () => {
+                    const filePath = this.currentFiles[index].path;
+                    console.log("Double-click detected on:", filePath); // 调试日志
+                    this.openItem(filePath);
+                });
+                
+                // 鼠标变成小手，提示可交互
+                row.style.cursor = 'pointer';
+                row.title = "Double-click to open"; 
+            }
+        });
     }
     
     formatFileSize(bytes) {

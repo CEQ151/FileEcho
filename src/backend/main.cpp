@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
     try {
         // 3. 创建 GUI 窗口
         // 【关键修复】现在 WEBVIEW_WINAPI 已定义，webview 类可以正常使用了
-        webview::webview w(false, nullptr); 
+        webview::webview w(true, nullptr); 
 
         w.set_title("FileEcho - Scan Deep, Echo Clear");
         
