@@ -35,3 +35,11 @@ if(WIN32)
         set_target_properties(FileEcho PROPERTIES LINK_FLAGS "/ENTRY:mainCRTStartup")
     endif()
 endif()
+
+# 自动拷贝前端资源到 build 目录
+add_custom_command(TARGET FileEcho POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    "${CMAKE_SOURCE_DIR}/src/frontend"
+    "${CMAKE_BINARY_DIR}/frontend"
+    COMMENT "Copying frontend resources to build directory..."
+)

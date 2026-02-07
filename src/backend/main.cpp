@@ -32,6 +32,7 @@
 #include <chrono>
 #include <atomic>
 #include <csignal>
+#include <cstdlib>
 
 // ==========================================
 // 3. 主程序逻辑
@@ -97,9 +98,7 @@ int main(int argc, char* argv[]) {
     g_running = false;
     server.stop();
 
-    if (server_thread.joinable()) {
-        server_thread.join();
-    }
+    std::exit(0);
 
     return 0;
 }
