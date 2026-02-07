@@ -21,14 +21,6 @@ using namespace std;
 namespace fs = std::filesystem;
 
 WebServer::WebServer() {
-    // 创建上传目录
-    try {
-        if (!fs::exists(upload_dir_)) {
-            fs::create_directory(upload_dir_);
-        }
-    } catch (const exception& e) {
-        cerr << "[Server] Failed to create upload directory: " << e.what() << endl;
-    }
 }
 
 WebServer::~WebServer() {
@@ -74,10 +66,6 @@ void WebServer::setup_routes() {
         handle_root(httplib::Request(), res); // Hack: 简单的重定向不依赖 req
     });
     
-    server_->Post("/api/upload", [this](const httplib::Request& req, httplib::Response& res) {
-        handle_upload(req, res);
-    });
-    
     server_->Post("/api/scan", [this](const httplib::Request& req, httplib::Response& res) {
         handle_scan(req, res);
     });
@@ -101,63 +89,6 @@ void WebServer::setup_routes() {
 
 void WebServer::handle_root(const httplib::Request&, httplib::Response& res) {
     res.set_redirect("/index.html");
-}
-
-void WebServer::handle_upload(const httplib::Request& req, httplib::Response& res) {
-    try {
-        auto body = json::parse(req.body);
-        string source_path_utf8 = body.value("source_path", "");
-        string target_path_utf8 = body.value("target_path", "");
-
-        if (source_path_utf8.empty() || target_path_utf8.empty()) {
-            res.set_content(json({{"success", false}, {"message", "Missing source_path or target_path"}}).dump(), "application/json");
-            return;
-        }
-
-        fs::path source_path = Utils::ToWString(source_path_utf8);
-        fs::path target_path = Utils::ToWString(target_path_utf8);
-
-        // 使用 FileSystemScanner 进行增强的安全检查
-        if (!FileSystemScanner::is_path_safe(source_path) || !FileSystemScanner::is_path_safe(target_path)) {
-            res.set_content(json({{"success", false}, {"message", "Security Check Failed: Illegal path format or access denied"}}).dump(), "application/json");
-            return;
-        }
-
-        // 确保源路径存在
-        if (!fs::exists(source_path)) {
-            res.set_content(json({{"success", false}, {"message", "Source path does not exist"}}).dump(), "application/json");
-            return;
-        }
-
-        // 如果目标目录不存在，则创建
-        if (!fs::exists(target_path)) {
-            fs::create_directories(target_path);
-        }
-
-        // 构建最终目标路径 (保持源文件名/目录名)
-        fs::path final_target = target_path / source_path.filename();
-
-        // 执行秒传 (本地拷贝)
-        if (fs::is_directory(source_path)) {
-            // 递归拷贝文件夹
-            fs::copy(source_path, final_target, fs::copy_options::recursive | fs::copy_options::overwrite_existing);
-        } else {
-            // 拷贝单个文件
-            fs::copy(source_path, final_target, fs::copy_options::overwrite_existing);
-        }
-
-        json response = {
-            {"success", true},
-            {"message", "Echo completed (Instant path reference clone)"},
-            {"target", Utils::ToUtf8(final_target.wstring())}
-        };
-        res.set_content(response.dump(), "application/json");
-
-    } catch (const fs::filesystem_error& e) {
-        res.set_content(json({{"success", false}, {"message", string("System Error: ") + e.what()}}).dump(), "application/json");
-    } catch (const exception& e) {
-        res.set_content(json({{"success", false}, {"message", e.what()}}).dump(), "application/json");
-    }
 }
 
 void WebServer::handle_scan(const httplib::Request& req, httplib::Response& res) {

@@ -27,13 +27,11 @@ class FileManagerApp {
         this.generateTreeBtn = document.getElementById('generate-tree-btn');
         this.downloadBtn = document.getElementById('download-btn');
         this.copyBtn = document.getElementById('copy-btn');
-        this.echoBtn = document.getElementById('echo-btn');
         this.clearBtn = document.getElementById('clear-btn'); // Only clears tree view
         this.clearAllBtn = document.getElementById('clear-all-btn'); // Clears everything
         
         // Input elements
         this.directoryPathInput = document.getElementById('directory-path');
-        this.sourcePathInput = document.getElementById('source-path');
         
         // Output elements
         this.treeOutput = document.getElementById('tree-output');
@@ -53,7 +51,6 @@ class FileManagerApp {
         
         this.downloadBtn.addEventListener('click', () => this.downloadTree());
         this.copyBtn.addEventListener('click', () => this.copyTreeToClipboard());
-        this.echoBtn.addEventListener('click', () => this.echoFiles());
         this.clearBtn.addEventListener('click', () => this.clearResults());
         this.clearAllBtn.addEventListener('click', () => this.clearAllData());
         
@@ -293,45 +290,6 @@ class FileManagerApp {
             this.showToast('Tree copied to clipboard!', 'success');
         } catch (error) {
             this.showToast(`Failed to copy: ${error.message}`, 'error');
-        }
-    }
-    
-    async echoFiles() {
-        const sourcePath = this.sourcePathInput.value.trim();
-        const targetPath = this.directoryPathInput.value.trim();
-
-        if (!sourcePath || !targetPath) {
-            this.showToast('Please enter both source and target paths', 'warning');
-            return;
-        }
-
-        this.showToast('Starting Echo (Local Copying)...', 'info');
-        this.echoBtn.disabled = true;
-
-        try {
-            const response = await fetch(`${this.apiBaseUrl}/api/upload`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    source_path: sourcePath,
-                    target_path: targetPath
-                })
-            });
-
-            const result = await response.json();
-            if (result.success) {
-                this.showToast(`Echo Success: ${result.message}`, 'success');
-                // Refresh the tree after successful echo
-                this.scanDirectory(true);
-            } else {
-                this.showToast(`Echo Failed: ${result.message}`, 'danger');
-            }
-        } catch (error) {
-            this.showToast(`Error: ${error.message}`, 'danger');
-        } finally {
-            this.echoBtn.disabled = false;
         }
     }
 

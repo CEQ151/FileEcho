@@ -34,7 +34,6 @@ private:
     
     // HTTP请求处理函数
     void handle_root(const httplib::Request& req, httplib::Response& res);
-    void handle_upload(const httplib::Request& req, httplib::Response& res);
     void handle_scan(const httplib::Request& req, httplib::Response& res);
     void handle_tree(const httplib::Request& req, httplib::Response& res);
     void handle_download(const httplib::Request& req, httplib::Response& res);
@@ -48,9 +47,6 @@ private:
     // 服务器状态
     std::atomic<bool> running_{false};
     int port_{8080};
-    
-    // 上传文件存储目录
-    std::string upload_dir_{"uploads"};
     
     // 当前扫描的缓存信息
     struct {
