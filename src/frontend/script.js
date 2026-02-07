@@ -79,30 +79,33 @@ class FileManagerApp {
         // Resizer logic
         const resizer = document.getElementById('resizer');
         const treeSection = document.querySelector('.tree-section');
-        const listSection = document.querySelector('.list-section');
+        const sidebar = document.getElementById('sidebar');
 
         let isResizing = false;
 
         resizer.addEventListener('mousedown', (e) => {
             isResizing = true;
             document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
         });
 
         document.addEventListener('mousemove', (e) => {
             if (!isResizing) return;
 
-            const offsetRight = document.body.offsetWidth - e.clientX;
-            const newTreeWidth = document.body.offsetWidth - offsetRight;
+            const sidebarWidth = sidebar.getBoundingClientRect().width;
+            const newTreeWidth = e.clientX - sidebarWidth;
 
-            if (newTreeWidth > 200 && newTreeWidth < 500) {
+            if (newTreeWidth > 150 && newTreeWidth < 600) {
                 treeSection.style.width = `${newTreeWidth}px`;
-                listSection.style.flex = '1';
             }
         });
 
         document.addEventListener('mouseup', () => {
-            isResizing = false;
-            document.body.style.cursor = '';
+            if (isResizing) {
+                isResizing = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+            }
         });
     }
 
@@ -119,6 +122,11 @@ class FileManagerApp {
     // Upload functions removed
 
     async openItem(path) {
+        // Explicitly allow http/https URLs (handled by backend ShellExecute)
+        if (path.startsWith('http://') || path.startsWith('https://')) {
+            // No specific client-side logic needed, just pass to backend
+        }
+
         try {
             const response = await fetch(`${this.apiBaseUrl}/api/open`, {
                 method: 'POST',

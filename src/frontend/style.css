@@ -282,10 +282,16 @@ body {
     color: var(--muted-color);
 }
 
-.tree-viewport, .table-viewport {
+.tree-viewport {
     flex: 1;
     overflow-y: auto;
     padding: 0.75rem;
+}
+
+.table-viewport {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
 }
 
 .tree-viewport pre {
@@ -315,12 +321,13 @@ body {
 .sticky-header thead th {
     position: sticky;
     top: 0;
-    background: white;
+    background: #ffffff;
     z-index: 10;
     font-size: 0.75rem;
     text-transform: uppercase;
     color: var(--muted-color);
     border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .table-sm td {
@@ -735,11 +742,21 @@ tbody tr:hover {
 }
 
 .resizer {
-    width: 4px;
-    background-color: #ccc;
+    width: 8px;
+    background: transparent;
     cursor: col-resize;
     position: relative;
-    z-index: 1;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.resizer::after {
+    content: '';
+    width: 1px;
+    background-color: #e2e8f0;
+    height: 100%;
 }
 
 /* Responsive Design */
