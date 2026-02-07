@@ -1,80 +1,84 @@
-# 📡 FileEcho - Scan Deep, Echo Clear
+# FileEcho
 
-[![C++](https://img.shields.io/badge/Language-C%2B%2B17-blue.svg)](https://en.cppreference.com/w/cpp/17)
-[![Framework](https://img.shields.io/badge/Framework-WebView2-green.svg)](https://developer.microsoft.com/en-us/microsoft-edge/webview2/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+**FileEcho** is a high-performance, native local file manager and analysis tool for Windows. It combines the raw power of **C++17** with the modern UI capabilities of **WebView2**, featuring a hybrid architecture (Local C++ Backend + Web Frontend).
 
-**FileEcho** is a lightweight, high-performance directory analysis and file cloning tool designed for developers and geeks. It features a high-performance backend written in C++17 and a modern frontend powered by WebView2, achieving a "what you see is what you get" directory management experience.
+**FileEcho** 是一个高性能的 Windows 本地文件管理与分析工具。它结合了 **C++17** 的强大性能与 **WebView2** 的现代 UI 能力，采用混合架构（本地 C++ 后端 + Web 前端）构建。
 
----
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)
+![Compiler](https://img.shields.io/badge/compiler-MinGW--w64-green)
 
-## ✨ Features
+## 🚀 Key Features (核心特性)
 
-- 🚀 **High-Speed Scanning**: Powered by C++ performance, it processes complex directories with tens of thousands of files in an instant.
-- 📂 **Structure Preview**: Generates beautiful ASCII tree diagrams with depth control and exclusion rules.
-- ⚡ **Instant Echo (Cloning)**: Uses a "path reference" architecture for local file/folder cloning, achieving disk-level speeds without network overhead.
-- 🎨 **Modern UI**: Dark/Light mode support with smooth animations and responsive design.
-- 🔒 **Security First**: Strict path safety checks to prevent directory traversal and block non-local UNC paths.
+-   **⚡ High-Performance Scanning (高性能扫描)**
+    -   Utilizes **Multi-threading (`std::async`)** to scan directories in parallel.
+    -   利用 **多线程并行 (`std::async`)** 技术实现极速目录扫描。
+    -   **Smart Filtering**: Automatically skips system-protected folders (e.g., `C:\Windows`, `$Recycle.Bin`) to prevent hanging and ensure stability.
+    -   **智能过滤**：自动跳过系统受保护目录（如 `C:\Windows`），防止卡顿并确保稳定性。
 
-## 🛠️ Tech Stack
+-   **🔄 Echo (Instant Clone)**
+    -   Select a source file/folder and "Echo" it to the target directory instantly using local file system APIs (Zero-latency copying).
+    -   **本地秒传**：选中源文件/文件夹，利用本地文件系统 API 将其瞬间“回响”（克隆）到目标目录。
 
-- **Backend**: C++17, [cpp-httplib](https://github.com/yhirose/cpp-httplib), [nlohmann/json](https://github.com/nlohmann/json)
-- **GUI**: [webview/webview](https://github.com/webview/webview) (based on Microsoft Edge WebView2)
-- **Frontend**: HTML5, CSS3 (Inter font, FontAwesome icons), JavaScript (Vanilla JS)
+-   **🌲 Interactive Visualization (交互式视图)**
+    -   Generate tree-structured text views of your file system.
+    -   生成文件系统的树状结构文本视图，支持导出。
 
-## 🚀 Build & Run
+-   **🛠️ Native Experience (原生体验)**
+    -   **Console-less**: Runs as a background GUI application without a command prompt window.
+    -   **Clean Shutdown**: Optimized process management ensures no zombie processes remain after closing.
+    -   **无黑窗口**：作为纯 GUI 应用运行。
+    -   **彻底退出**：优化的进程管理，关闭窗口即彻底结束后台线程，无残留。
 
-### Prerequisites
-- Windows 10/11
-- CMake 3.15+
-- MinGW-w64 (v13.1.0+ recommended) or MSVC
-- Microsoft Edge WebView2 Runtime
+## 🛠️ Tech Stack (技术栈)
 
-### Build Steps
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/your-repo/FileEcho.git
-   cd FileEcho
-   ```
+* **Language**: C++17
+* **Compiler**: MinGW-w64 (GCC)
+* **GUI**: [webview](https://github.com/webview/webview) (Edge Chromium)
+* **Server**: [cpp-httplib](https://github.com/yhirose/cpp-httplib) (Multi-threaded)
+* **JSON**: [nlohmann/json](https://github.com/nlohmann/json)
+* **Build System**: CMake 3.15+
 
-2. **Generate build configuration**:
-   ```bash
-   mkdir build
-   cd build
-   cmake ..
-   ```
+## 📦 How to Build (如何构建)
 
-3. **Compile**:
-   ```bash
-   cmake --build .
-   ```
+### Prerequisites (前置要求)
+* CMake
+* MinGW-w64 (GCC)
+* Git
 
-### ⚠️ Read Before Running (Important!)
-After compilation, `FileEcho.exe` will be generated in the `build` directory. **Running it directly will result in a blank window** because the backend needs to load static frontend resources.
+### Build Steps (构建步骤)
 
-**Please follow these steps exactly:**
-1. Locate the `frontend/` folder in the project root.
-2. **Copy** the entire `frontend/` folder into the `build/` directory (same level as `FileEcho.exe`).
-3. Now run `FileEcho.exe` to see the full graphical interface.
-
-The directory structure should look like this:
-```text
-build/
-├── frontend/        <-- MUST be manually copied here
-│   ├── index.html
-│   ├── script.js
-│   └── style.css
-└── FileEcho.exe
+#### 1. Clone the repository
+```bash
+git clone https://github.com/CEQ151/FileEcho.git
+cd FileEcho
+```
+#### 2. Create build directory
+```bash
+mkdir build && cd build
 ```
 
-## 📖 Usage Guide
+#### 3. Configure (MinGW)
+```bash
+cmake -G "MinGW Makefiles" ..
+```
 
-1. **Set Scan Path**: Enter an absolute path in "Target Directory Path" and click `Refresh Tree`.
-2. **Filter Rules**: Configure `Max Depth` or `Exclude Patterns` (e.g., `node_modules`) in the settings panel.
+#### 4. Build
+
+```bash
+cmake --build .
+```
+
+> **Note**: The build process automatically copies the `src/frontend` resources to the build directory. You don't need to move files manually!
+> **注意**：构建过程会自动将 `src/frontend` 资源复制到构建目录，无需手动移动文件！
+
+## 🖥️ Usage (使用方法)
+
+1. Run `FileEcho.exe` from the `build` directory.
+2. **Scan**: Enter a path (e.g., `D:/Projects`) and click scan to see the file structure.
+3. **Echo**: Enter a "Source Path" and click "Echo" to clone it to the current directory.
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
 
----
-*Powered by FileEcho - Make file management as clear and crisp as an echo.*
