@@ -37,6 +37,7 @@ class FileManagerApp {
         
         // Input elements
         this.directoryPathInput = document.getElementById('directory-path');
+        this.listFilterInput = document.getElementById('list-filter');
         
         // Output elements
         this.treeOutput = document.getElementById('tree-output');
@@ -68,6 +69,14 @@ class FileManagerApp {
         this.directoryPathInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 this.scanDirectory(true);
+            }
+        });
+
+        // Search events
+        this.listFilterInput.addEventListener('input', () => this.applySearch(false));
+        this.listFilterInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.applySearch(true);
             }
         });
 
@@ -214,8 +223,9 @@ class FileManagerApp {
         }
         
         try {
+            const query = this.listFilterInput ? this.listFilterInput.value.trim() : '';
             // Generate tree on client side
-            const treeHtml = this.generateTreeContent(true); // HTML format for display
+            const treeHtml = this.generateTreeContent(true, query, false); // HTML format for display
             
             // For saving state and clipboard, we might want plain text
             // But for display, we use HTML
@@ -229,69 +239,96 @@ class FileManagerApp {
     }
     
     // Generate tree content (HTML or Plain Text)
-    generateTreeContent(asHtml) {
+    generateTreeContent(asHtml, query = '', pruneTree = false) {
         if (this.currentFiles.length === 0) return asHtml ? '' : 'No files found.';
 
-        let output = '';
         const files = this.currentFiles;
+        const lowerQuery = query.toLowerCase();
+        const pathsToKeep = new Set();
+
+        if (pruneTree && query) {
+            files.forEach(file => {
+                if (file.name.toLowerCase().includes(lowerQuery)) {
+                    let currentPath = file.path;
+                    while (currentPath) {
+                        pathsToKeep.add(currentPath);
+                        // Find parent path
+                        const lastSlash = Math.max(currentPath.lastIndexOf('/'), currentPath.lastIndexOf('\\'));
+                        if (lastSlash === -1) break;
+                        currentPath = currentPath.substring(0, lastSlash);
+                    }
+                }
+            });
+            // Always keep the base path
+            pathsToKeep.add(this.currentPath);
+        }
+
+        let output = '';
         
         // 1. Output Root Directory
-        // Extract root name from current path
         let rootName = this.currentPath.split(/[/\\]/).filter(Boolean).pop();
-        if (!rootName && this.currentPath === '.') rootName = 'root'; // Fallback
-        if (!rootName) rootName = this.currentPath; // Fallback
-        
-        // Add trailing slash for directories
+        if (!rootName && this.currentPath === '.') rootName = 'root';
+        if (!rootName) rootName = this.currentPath;
         rootName += '/';
         
+        let displayRootName = rootName;
+        if (asHtml && query && rootName.toLowerCase().includes(lowerQuery)) {
+            const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            displayRootName = rootName.replace(regex, '<mark class="highlight">$1</mark>');
+        }
+
         if (asHtml) {
-            output += `<span class="tree-icon">📁</span> <span class="tree-item-name" style="font-weight:bold">${rootName}</span>\n`;
+            output += `<span class="tree-icon">📁</span> <span class="tree-item-name" style="font-weight:bold">${displayRootName}</span>\n`;
         } else {
             output += `${rootName}\n`;
         }
         
+        // Filter files to display
+        const filesToDisplay = (pruneTree && query) 
+            ? files.filter(f => pathsToKeep.has(f.path))
+            : files;
+
         // Track the "is last child" status for each depth level
         const isLastAtDepth = new Array(100).fill(false);
         
-        // Helper to check if a file is the last child of its parent
+        // Helper to check if a file is the last child of its parent (among visible files)
         const checkIsLast = (index, currentDepth) => {
-            for (let i = index + 1; i < files.length; i++) {
-                const nextFile = files[i];
-                if (nextFile.depth < currentDepth) return true; // Back up a level, so we were last
-                if (nextFile.depth === currentDepth) return false; // Found a sibling
+            for (let i = index + 1; i < filesToDisplay.length; i++) {
+                const nextFile = filesToDisplay[i];
+                if (nextFile.depth < currentDepth) return true;
+                if (nextFile.depth === currentDepth) return false;
             }
-            return true; // End of list
+            return true;
         };
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+        for (let i = 0; i < filesToDisplay.length; i++) {
+            const file = filesToDisplay[i];
             
-            // Determine if this is the last item at this level
             const isLast = checkIsLast(i, file.depth);
             isLastAtDepth[file.depth] = isLast;
 
-            // Indentation (start from depth 1)
-            // If file.depth is 1, loop doesn't run -> no indentation prefix before connector
             for (let d = 1; d < file.depth; d++) {
                 output += isLastAtDepth[d] ? '    ' : '│   ';
             }
 
-            // Connector
             output += isLast ? '└── ' : '├── ';
 
-            // Icon and Name
             const iconChar = file.is_directory ? '📁' : '📄';
             let fileName = file.name;
-            if (file.is_directory) fileName += '/'; // Add slash for dirs
+            if (file.is_directory) fileName += '/';
             
-            if (asHtml) {
-                output += `<span class="tree-icon">${iconChar}</span> <span class="tree-item-name">${fileName}</span>`;
-            } else {
-                output += `${fileName}`; // Text mode: no icon, just name (or maybe with icon if requested, user asked for clean format)
-                // User's example has no icons in text mode, but maybe folders have slash
+            let displayName = fileName;
+            if (asHtml && query && fileName.toLowerCase().includes(lowerQuery)) {
+                const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                displayName = fileName.replace(regex, '<mark class="highlight">$1</mark>');
             }
 
-            // Size (optional)
+            if (asHtml) {
+                output += `<span class="tree-icon">${iconChar}</span> <span class="tree-item-name">${displayName}</span>`;
+            } else {
+                output += `${fileName}`;
+            }
+
             if (this.showSizeCheckbox.checked) {
                 const sizeStr = this.formatFileSize(file.size || 0);
                 output += ` (${sizeStr})`;
@@ -402,26 +439,42 @@ class FileManagerApp {
         return '📄';
     }
 
-    updateFileTable() {
+    updateFileTable(query = '') {
         if (this.currentFiles.length === 0) {
             this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No files scanned yet</td></tr>';
             return;
         }
         
         let html = '';
-        
-        this.currentFiles.forEach(file => {
+        const lowerQuery = query.toLowerCase();
+        const filteredFiles = query 
+            ? this.currentFiles.filter(file => file.name.toLowerCase().includes(lowerQuery))
+            : this.currentFiles;
+
+        if (filteredFiles.length === 0 && query !== '') {
+            this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No matching files found</td></tr>';
+            return;
+        }
+
+        filteredFiles.forEach(file => {
             const type = file.is_directory ? 'Directory' : 'File';
             const typeClass = file.is_directory ? 'directory' : 'file';
             const size = this.formatFileSize(file.size || 0);
             const icon = this.getFileIcon(file.name, file.is_directory);
             
+            // Highlight name
+            let displayName = file.name;
+            if (query) {
+                const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                displayName = file.name.replace(regex, '<mark class="highlight">$1</mark>');
+            }
+
             html += `
-                <tr>
+                <tr data-path="${file.path.replace(/"/g, '&quot;')}">
                     <td>
                         <div class="file-name-cell">
                             <span class="file-icon">${icon}</span>
-                            <span class="name-text" title="${file.name}">${file.name}</span>
+                            <span class="name-text" title="${file.name}">${displayName}</span>
                         </div>
                     </td>
                     <td><span class="type-badge ${typeClass}">${type}</span></td>
@@ -431,23 +484,17 @@ class FileManagerApp {
             `;
         });
         
-       this.fileTableBody.innerHTML = html;
+        this.fileTableBody.innerHTML = html;
 
         // Add event listeners to rows
         const rows = this.fileTableBody.querySelectorAll('tr');
-        rows.forEach((row, index) => {
-            if (this.currentFiles[index]) {
-                // 绑定双击事件
-                row.addEventListener('dblclick', () => {
-                    const filePath = this.currentFiles[index].path;
-                    console.log("Double-click detected on:", filePath); // 调试日志
-                    this.openItem(filePath);
-                });
-                
-                // 鼠标变成小手，提示可交互
-                row.style.cursor = 'pointer';
-                row.title = "Double-click to open"; 
-            }
+        rows.forEach(row => {
+            row.addEventListener('dblclick', () => {
+                const filePath = row.getAttribute('data-path');
+                this.openItem(filePath);
+            });
+            row.style.cursor = 'pointer';
+            row.title = "Double-click to open"; 
         });
     }
     
@@ -561,6 +608,21 @@ class FileManagerApp {
 
         } catch (e) {
             console.error("Failed to load state", e);
+        }
+    }
+
+    applySearch(pruneTree = false) {
+        const query = this.listFilterInput.value.trim();
+        
+        // 1. Update File Table (Real-time)
+        this.updateFileTable(query);
+        
+        // 2. Update Tree
+        // If query is empty, restore full tree
+        // If pruneTree is true, re-generate tree with pruning
+        if (pruneTree || query === '') {
+            const treeHtml = this.generateTreeContent(true, query, pruneTree);
+            this.treeOutput.innerHTML = treeHtml;
         }
     }
 }

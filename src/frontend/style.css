@@ -275,6 +275,46 @@ body {
     background: #fff;
 }
 
+.filter-box {
+    display: flex;
+    align-items: center;
+    background: #f1f3f5;
+    border-radius: 8px;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid transparent;
+    transition: var(--transition);
+    margin-top: 0.5rem;
+}
+
+.filter-box:focus-within {
+    background: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+}
+
+.filter-box i {
+    color: var(--muted-color);
+    font-size: 0.8rem;
+    margin-right: 8px;
+}
+
+.filter-box input {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 0.85rem;
+    width: 100%;
+    color: var(--text-color);
+}
+
+.highlight {
+    background-color: #fff3bf;
+    color: #d9480f;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: 600;
+}
+
 .column-header h3 {
     font-size: 0.85rem;
     font-weight: 700;
@@ -284,7 +324,7 @@ body {
 
 .tree-viewport {
     flex: 1;
-    overflow-y: auto;
+    overflow: auto;
     padding: 0.75rem;
 }
 
@@ -334,6 +374,10 @@ body {
     padding: 0.2rem 0.5rem !important;
     font-size: 0.8rem;
     vertical-align: middle;
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Global Rounded Corners & Buttons */
