@@ -247,7 +247,7 @@ class FileManagerApp {
     }
     
     // Generate tree content (HTML or Plain Text)
-    generateTreeContent(asHtml, query = '', pruneTree = false) {
+    generateTreeContent(asHtml, query = '', pruneTree = false, visiblePaths = null) {
         if (this.currentFiles.length === 0) return asHtml ? '' : 'No files found.';
 
         const files = this.currentFiles;
@@ -269,9 +269,13 @@ class FileManagerApp {
             pathsToKeep.add(this.currentPath);
         }
 
+        // Use provided visiblePaths if available (e.g., from download during active search)
+        // Otherwise use pathsToKeep if pruneTree is true
+        const effectiveVisiblePaths = visiblePaths || (pruneTree && query ? pathsToKeep : null);
+
         // Strictly ordered by hierarchical path for the tree view
-        let filesToDisplay = (pruneTree && query) 
-            ? files.filter(f => pathsToKeep.has(f.path))
+        let filesToDisplay = effectiveVisiblePaths
+            ? files.filter(f => effectiveVisiblePaths.has(f.path))
             : [...files];
 
         // Ensure the tree always uses a stable hierarchical pre-order (Folder First + Alphabetical)
@@ -361,20 +365,54 @@ class FileManagerApp {
         }
         
         try {
+            // Check if a search/filter is currently active
+            const searchQuery = this.listFilterInput ? this.listFilterInput.value.trim() : '';
+            const isSearchActive = searchQuery.length > 0;
+            
+            // Build visiblePaths set for filtered view (same logic as applySearch)
+            let visiblePaths = null;
+            if (isSearchActive) {
+                visiblePaths = new Set();
+                const lowerQuery = searchQuery.toLowerCase();
+                this.currentFiles.forEach(file => {
+                    if (file.name.toLowerCase().includes(lowerQuery)) {
+                        let currentPath = file.path;
+                        while (currentPath) {
+                            visiblePaths.add(currentPath);
+                            const lastSlash = Math.max(currentPath.lastIndexOf('/'), currentPath.lastIndexOf('\\'));
+                            if (lastSlash === -1) break;
+                            currentPath = currentPath.substring(0, lastSlash);
+                        }
+                    }
+                });
+                visiblePaths.add(this.currentPath);
+            }
+            
             // Generate plain text tree for download
-            const treeText = this.generateTreeContent(false);
+            // Pass visiblePaths to ensure download reflects the filtered view
+            const treeText = this.generateTreeContent(false, searchQuery, isSearchActive, visiblePaths);
+            
+            // Generate dynamic filename
+            let filename = 'file_tree';
+            if (isSearchActive) {
+                // Include search keyword in filename
+                const sanitizedKeyword = searchQuery.replace(/[^a-zA-Z0-9_]/g, '_').substring(0, 30);
+                filename += `_search_${sanitizedKeyword}`;
+            }
+            filename += `_${new Date().getTime()}.txt`;
             
             const blob = new Blob([treeText], { type: 'text/plain' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `file_tree_${new Date().getTime()}.txt`;
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
             
-            this.showToast('Download started', 'success');
+            const toastMsg = isSearchActive ? `Download started (search: "${searchQuery}")` : 'Download started';
+            this.showToast(toastMsg, 'success');
         } catch (error) {
             this.showToast(`Download error: ${error.message}`, 'error');
         }
