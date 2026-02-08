@@ -258,6 +258,25 @@ body {
     flex-direction: column;
 }
 
+/* Tree Toggle Styles */
+.tree-toggle {
+    cursor: pointer;
+    user-select: none;
+    color: var(--primary-color);
+    font-family: monospace;
+    font-weight: bold;
+    margin-right: 4px;
+    display: inline-block;
+    width: 1.2em;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.tree-toggle:hover {
+    color: var(--primary-dark);
+    transform: scale(1.2);
+}
+
 .tree-section {
     width: 300px;
     min-width: 200px;

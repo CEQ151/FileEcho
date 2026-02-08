@@ -5,6 +5,7 @@ class FileManagerApp {
         this.currentPath = '';
         this.totalSize = 0;
         this.sortCriteria = { key: 'name', direction: 'asc' };
+        this.collapsedPaths = new Set(); // Stores paths of collapsed directories
         
         this.initElements();
         this.initEventListeners();
@@ -78,6 +79,20 @@ class FileManagerApp {
         this.listFilterInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 this.applySearch(true);
+            }
+        });
+
+        // Tree Toggle Interaction (Event Delegation)
+        this.treeOutput.addEventListener('click', (e) => {
+            const toggle = e.target.closest('.tree-toggle');
+            if (toggle) {
+                const path = toggle.getAttribute('data-path');
+                if (this.collapsedPaths.has(path)) {
+                    this.collapsedPaths.delete(path);
+                } else {
+                    this.collapsedPaths.add(path);
+                }
+                this.generateTree(); // Re-render the UI
             }
         });
 
@@ -202,6 +217,9 @@ class FileManagerApp {
                 // Update file table (handles stats and sorting)
                 this.updateFileTable();
                 
+                // Reset collapsed state on new scan
+                this.collapsedPaths.clear();
+                
                 this.showToast(`Found ${result.file_count} files/directories`, 'success');
                 
                 // Auto generate tree if requested
@@ -232,14 +250,15 @@ class FileManagerApp {
         
         try {
             const query = this.listFilterInput ? this.listFilterInput.value.trim() : '';
+            const isSearchActive = query.length > 0;
+
             // Generate tree on client side
-            const treeHtml = this.generateTreeContent(true, query, false); // HTML format for display
+            // Always pass the current query and active search status to ensure 
+            // the tree reflects the current UI state (Filters + Collapsed Folders)
+            const treeHtml = this.generateTreeContent(true, query, isSearchActive);
             
-            // For saving state and clipboard, we might want plain text
-            // But for display, we use HTML
             this.treeOutput.innerHTML = treeHtml;
             this.saveState();
-            // this.showToast('File tree generated successfully!', 'success');
         } catch (error) {
             this.showToast(`Tree generation error: ${error.message}`, 'error');
             console.error(error);
@@ -273,10 +292,29 @@ class FileManagerApp {
         // Otherwise use pathsToKeep if pruneTree is true
         const effectiveVisiblePaths = visiblePaths || (pruneTree && query ? pathsToKeep : null);
 
-        // Strictly ordered by hierarchical path for the tree view
-        let filesToDisplay = effectiveVisiblePaths
-            ? files.filter(f => effectiveVisiblePaths.has(f.path))
-            : [...files];
+        // Helper to check if any ancestor is collapsed
+        const isCollapsedByAncestor = (filePath) => {
+            for (const collapsedPath of this.collapsedPaths) {
+                // If the file path starts with a collapsed path and it's not the collapsed directory itself
+                if (filePath.startsWith(collapsedPath) && filePath !== collapsedPath) {
+                    // Ensure it's a true sub-path (followed by a slash)
+                    const subChar = filePath[collapsedPath.length];
+                    if (subChar === '/' || subChar === '\\') return true;
+                }
+            }
+            return false;
+        };
+
+        // Filter files based on visiblePaths (search) AND collapsed state
+        let filesToDisplay = files.filter(f => {
+            // 1. Must be in visible paths (if searching)
+            if (effectiveVisiblePaths && !effectiveVisiblePaths.has(f.path)) return false;
+            
+            // 2. Must not have a collapsed ancestor
+            if (isCollapsedByAncestor(f.path)) return false;
+            
+            return true;
+        });
 
         // Ensure the tree always uses a stable hierarchical pre-order (Folder First + Alphabetical)
         // regardless of the list's sort criteria.
@@ -330,6 +368,12 @@ class FileManagerApp {
 
             // Connector
             output += isLast ? '└── ' : '├── ';
+
+            if (file.is_directory && asHtml) {
+                const isCollapsed = this.collapsedPaths.has(file.path);
+                const toggleIcon = isCollapsed ? '[+]' : '[-]';
+                output += `<span class="tree-toggle" data-path="${file.path.replace(/"/g, '&quot;')}">${toggleIcon}</span> `;
+            }
 
             const iconChar = file.is_directory ? '📁' : '📄';
             let fileName = file.name + (file.is_directory ? '/' : '');
@@ -421,8 +465,16 @@ class FileManagerApp {
     // browseDirectory() { ... (unchanged)
 
     async copyTreeToClipboard() {
-        // Use plain text for clipboard
-        const treeText = this.generateTreeContent(false);
+        if (this.currentFiles.length === 0) {
+            this.showToast('No files to copy', 'warning');
+            return;
+        }
+
+        const query = this.listFilterInput ? this.listFilterInput.value.trim() : '';
+        const isSearchActive = query.length > 0;
+        
+        // Use plain text for clipboard, matching current visible state
+        const treeText = this.generateTreeContent(false, query, isSearchActive);
         
         if (!treeText || treeText === 'No files found.') {
             this.showToast('No tree to copy', 'warning');
@@ -767,12 +819,13 @@ class FileManagerApp {
         this.updateFileTable(query);
         
         // 2. Update Tree
-        // If query is empty, restore full tree
-        // If pruneTree is true, re-generate tree with pruning
-        if (pruneTree || query === '') {
-            const treeHtml = this.generateTreeContent(true, query, pruneTree);
-            this.treeOutput.innerHTML = treeHtml;
+        // If pruneTree is true (Enter pressed), clear collapsed state to show full results
+        if (pruneTree && query !== '') {
+            this.collapsedPaths.clear();
         }
+
+        // Re-generate tree using unified logic
+        this.generateTree();
     }
 }
 
