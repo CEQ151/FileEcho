@@ -15,8 +15,16 @@ include_directories(include src/backend)
 # 查找所有源文件
 file(GLOB_RECURSE SOURCES "src/backend/*.cpp")
 
+# 【新增】定义资源文件变量
+set(RESOURCE_FILES "")
+if(WIN32)
+    # 将资源文件加入列表
+    set(RESOURCE_FILES "FileEcho.rc")
+endif()
+
+
 # 创建可执行文件 (WIN32 隐藏黑窗口)
-add_executable(FileEcho WIN32 ${SOURCES})
+add_executable(FileEcho WIN32 ${SOURCES} ${SOURCES} ${RESOURCE_FILES})
 
 if(WIN32)
     # 链接所有必要的 Windows 系统库

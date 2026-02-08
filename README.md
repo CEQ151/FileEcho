@@ -14,7 +14,6 @@
     -   Utilizes **Multi-threading (`std::async`)** to scan directories in parallel.
     -   利用 **多线程并行 (`std::async`)** 技术实现极速目录扫描。
     -   **Smart Filtering**: Automatically skips system-protected folders (e.g., `C:\Windows`, `$Recycle.Bin`) to prevent hanging and ensure stability.
-    -   **智能过滤**：自动跳过系统受保护目录（如 `C:\Windows`），防止卡顿并确保稳定性。
 
 -   **🔄 Echo (Instant Clone)**
     -   Select a source file/folder and "Echo" it to the target directory instantly using local file system APIs (Zero-latency copying).

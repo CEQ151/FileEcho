@@ -43,23 +43,29 @@ vector<FileInfo> FileSystemScanner::scan_directory(const string& path, const Fil
     return result;
 }
 
+/**
+ * 检查是否应该跳过系统文件夹
+ * @param path 要检查的文件系统路径
+ * @return 如果路径在系统文件夹列表中则返回true，否则返回false
+ */
 bool FileSystemScanner::should_skip_system_folder(const fs::path& path) {
+    // 定义需要跳过的系统文件夹列表
     static const vector<wstring> skip_list = {
-        L"C:\\Windows", 
-        L"C:\\Program Files", 
-        L"C:\\Program Files (x86)", 
-        L"C:\\$Recycle.Bin", 
-        L"System Volume Information",
-        L"C:\\System Volume Information"
+        L"C:\\$Recycle.Bin",     // 回收站目录
+        L"System Volume Information", // 系统卷信息目录
+        L"C:\\System Volume Information" // 系统卷信息目录的完整路径
     };
 
+    // 将输入路径转换为宽字符串
     wstring p = path.wstring();
+    // 遍历跳过列表，检查路径是否以任何跳过列表中的路径开头
     for (const auto& skip : skip_list) {
+        // 检查路径长度是否足够且是否以跳过路径开头
         if (p.size() >= skip.size() && p.compare(0, skip.size(), skip) == 0) {
-            return true;
+            return true; // 路径匹配，应跳过
         }
     }
-    return false;
+    return false; // 路径不匹配，不应跳过
 }
 
 uintmax_t FileSystemScanner::scan_recursive(const fs::path& path, 

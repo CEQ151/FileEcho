@@ -1,7 +1,4 @@
-/**
- * FileEcho - V1.0.1 (Fixed MinGW Build)
- * 修复了 Windows API 版本定义和 Webview 宏顺序
- */
+
 
 // ==========================================
 // 1. 核心宏定义 (必须放在文件最最最开头)
@@ -80,8 +77,22 @@ int main(int argc, char* argv[]) {
         w.set_title("FileEcho - Scan Deep, Echo Clear");
         
         // 这些枚举现在应该能被识别了
-        w.set_size(1200, 800, WEBVIEW_HINT_NONE); 
-        w.set_size(800, 600, WEBVIEW_HINT_MIN);
+        w.set_size(1920, 1080, WEBVIEW_HINT_NONE); 
+
+        // ================= 【核心修改：注入图标】 =================
+        // 获取窗口的原生 Windows 句柄 (HWND)
+        HWND hwnd = (HWND)w.window(); 
+        if (hwnd) {
+            // 从当前程序 (.exe) 中加载 ID 为 1 的图标资源
+            // 系统会自动根据用途从 ico 包里选择 16x16 或 256x256
+            HICON hIcon = LoadIcon(GetModuleHandle(NULL), MAKEINTRESOURCE(1)); 
+            if (hIcon) {
+                // 设置任务栏的大图标
+                SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+                // 设置窗口左上角的小图标
+                SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIcon);
+            }
+        }
 
         std::string url = "http://localhost:" + std::to_string(port);
         w.navigate(url);
