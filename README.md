@@ -1,83 +1,55 @@
-# FileEcho
+# FileEcho v1.0.3
 
-**FileEcho** is a high-performance, native local file manager and analysis tool for Windows. It combines the raw power of **C++17** with the modern UI capabilities of **WebView2**, featuring a hybrid architecture (Local C++ Backend + Web Frontend).
+**FileEcho** 是一款专为开发者和系统管理员设计的现代化、高性能本地文件扫描与管理工具。它结合了 C++17 的原生性能与 Web 技术的高效交互，提供类似 Everything 的极速搜索体验与 IDE 级的目录树管理能力。
 
-**FileEcho** 是一个高性能的 Windows 本地文件管理与分析工具。它结合了 **C++17** 的强大性能与 **WebView2** 的现代 UI 能力，采用混合架构（本地 C++ 后端 + Web 前端）构建。
+## ✨ 核心功能
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%2010%2F11-blue)
-![Compiler](https://img.shields.io/badge/compiler-MinGW--w64-green)
+### 1. 极速扫描与多维排序
 
-## 🚀 Key Features (核心特性)
+* **深度扫描**：利用 C++17 `std::filesystem` 递归扫描本地目录，支持自定义扫描深度与排除规则（如 `.git`, `node_modules`）。
+* **文件夹置顶 (Folder First)**：无论应用何种排序规则，文件夹始终排在同级文件的上方，符合原生系统使用习惯。
+* **表头点击排序**：支持点击 **Name** (自然语言数字排序)、**Size** (原始字节比较)、**Type** 及 **Depth** 进行升降序排列。
 
--   **⚡ High-Performance Scanning (高性能扫描)**
-    -   Utilizes **Multi-threading (`std::async`)** to scan directories in parallel.
-    -   利用 **多线程并行 (`std::async`)** 技术实现极速目录扫描。
-    -   **Smart Filtering**: Automatically skips system-protected folders (e.g., `C:\Windows`, `$Recycle.Bin`) to prevent hanging and ensure stability.
+### 2. 智能文件树 (File Tree)
 
--   **🔄 Echo (Instant Clone)**
-    -   Select a source file/folder and "Echo" it to the target directory instantly using local file system APIs (Zero-latency copying).
-    -   **本地秒传**：选中源文件/文件夹，利用本地文件系统 API 将其瞬间“回响”（克隆）到目标目录。
+* **路径剪枝搜索**：在搜索框输入并回车，文件树将进入“剪枝模式”，仅显示匹配项及其完整的父级路径，保持上下文层级感。
+* **交互式折叠**：每个文件夹前设有 `[+]`/`[-]` 控制符，支持类似思维导图的局部展开与收起。
+* **高亮显示**：搜索结果在树状图中通过 `<mark>` 标签进行视觉高亮处理。
 
--   **🌲 Interactive Visualization (交互式视图)**
-    -   Generate tree-structured text views of your file system.
-    -   生成文件系统的树状结构文本视图，支持导出。
+### 3. 实时搜索与统计
 
--   **🛠️ Native Experience (原生体验)**
-    -   **Console-less**: Runs as a background GUI application without a command prompt window.
-    -   **Clean Shutdown**: Optimized process management ensures no zombie processes remain after closing.
-    -   **无黑窗口**：作为纯 GUI 应用运行。
-    -   **彻底退出**：优化的进程管理，关闭窗口即彻底结束后台线程，无残留。
+* **Everything 级过滤**：右侧文件列表支持实时模糊搜索，输入即过滤，体感无延迟。
+* **状态同步**：侧边栏实时同步当前视图下的文件总数与总体积（例如：“Found 5 items (2.5 MB)”）。
 
-## 🛠️ Tech Stack (技术栈)
+### 4. 专业级导出与交互
 
-* **Language**: C++17
-* **Compiler**: MinGW-w64 (GCC)
-* **GUI**: [webview](https://github.com/webview/webview) (Edge Chromium)
-* **Server**: [cpp-httplib](https://github.com/yhirose/cpp-httplib) (Multi-threaded)
-* **JSON**: [nlohmann/json](https://github.com/nlohmann/json)
-* **Build System**: CMake 3.15+
+* **所见即所得 (WYSIWYG) 导出**：点击“下载”或“复制”，生成的 `.txt` 树状图将严格遵循您当前的**折叠状态**与**搜索过滤状态**。
+* **双击打开**：在列表中双击任何文件或文件夹，将调用 Windows 系统原生关联程序将其打开。
+* **原生图标注入**：`.exe` 程序及窗口左上角均已注入多尺寸高质量 `.ico` 图标。
 
-## 📦 How to Build (如何构建)
+## 🛠️ 技术栈
 
-### Prerequisites (前置要求)
-* CMake
-* MinGW-w64 (GCC)
-* Git
+* **后端**: C++17, `cpp-httplib` (轻量级服务器), `webview` (跨平台原生壳)。
+* **前端**: 原生 JavaScript (ES6+), HTML5, CSS3 (Flexbox/Grid 布局)。
+* **UI 组件**: FontAwesome 6, Bootstrap 5 (部分辅助样式)。
 
-### Build Steps (构建步骤)
+## 🚀 快速开始
 
-#### 1. Clone the repository
-```bash
-git clone https://github.com/CEQ151/FileEcho.git
-cd FileEcho
-```
-#### 2. Create build directory
+1. **环境要求**: Windows 10/11 (x64), 支持 C++17 的编译器（如 MSVC 2019+）。
+2. **构建项目**:
 ```bash
 mkdir build && cd build
+cmake ..
+cmake --build . --config Release
+
 ```
 
-#### 3. Configure (MinGW)
-```bash
-cmake -G "MinGW Makefiles" ..
-```
 
-#### 4. Build
+3. **运行**: 启动 `FileEcho.exe`，在侧边栏输入绝对路径并点击搜索图标即可。
 
-```bash
-cmake --build .
-```
+## 📅 更新日志 (v1.0.4)
 
-> **Note**: The build process automatically copies the `src/frontend` resources to the build directory. You don't need to move files manually!
-> **注意**：构建过程会自动将 `src/frontend` 资源复制到构建目录，无需手动移动文件！
-
-## 🖥️ Usage (使用方法)
-
-1. Run `FileEcho.exe` from the `build` directory.
-2. **Scan**: Enter a path (e.g., `D:/Projects`) and click scan to see the file structure.
-3. **Echo**: Enter a "Source Path" and click "Echo" to clone it to the current directory.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
+* **[Fix]** 修复了文件夹全局置顶导致层级错乱的问题，现在支持同级目录局部置顶。
+* **[Update]** 优化了 `[+]`/`[-]` 悬停时的布局抖动问题。
+* **[New]** 实现了搜索后自动全部展开，清空搜索后自动重置视图的智能逻辑。
 
