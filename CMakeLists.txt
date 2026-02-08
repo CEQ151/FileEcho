@@ -18,13 +18,17 @@ file(GLOB_RECURSE SOURCES "src/backend/*.cpp")
 # 【新增】定义资源文件变量
 set(RESOURCE_FILES "")
 if(WIN32)
-    # 将资源文件加入列表
-    set(RESOURCE_FILES "FileEcho.rc")
+    # 【修改】将资源文件指向 resources 目录
+    set(RESOURCE_FILES "resources/FileEcho.rc")
 endif()
-
 
 # 创建可执行文件 (WIN32 隐藏黑窗口)
 add_executable(FileEcho WIN32 ${SOURCES} ${RESOURCE_FILES})
+
+# 【关键新增】将 resources 目录加入包含路径，确保 rc 编译器能找到 logo.ico
+if(WIN32)
+    target_include_directories(FileEcho PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/resources")
+endif()
 
 if(WIN32)
     # 链接所有必要的 Windows 系统库
@@ -46,8 +50,8 @@ endif()
 
 # 自动拷贝前端资源到 build 目录 (已改为单文件部署，此处不再需要)
 # add_custom_command(TARGET FileEcho POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory
-#     "${CMAKE_SOURCE_DIR}/src/frontend"
-#     "${CMAKE_BINARY_DIR}/frontend"
-#     COMMENT "Copying frontend resources to build directory..."
+#      COMMAND ${CMAKE_COMMAND} -E copy_directory
+#      "${CMAKE_SOURCE_DIR}/src/frontend"
+#      "${CMAKE_BINARY_DIR}/frontend"
+#      COMMENT "Copying frontend resources to build directory..."
 # )
