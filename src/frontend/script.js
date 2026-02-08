@@ -4,6 +4,7 @@ class FileManagerApp {
         this.currentFiles = [];
         this.currentPath = '';
         this.totalSize = 0;
+        this.sortCriteria = { key: 'name', direction: 'asc' };
         
         this.initElements();
         this.initEventListeners();
@@ -78,6 +79,14 @@ class FileManagerApp {
             if (e.key === 'Enter') {
                 this.applySearch(true);
             }
+        });
+
+        // Table sorting
+        document.querySelectorAll('.sticky-header thead th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const key = th.getAttribute('data-sort');
+                this.handleSort(key);
+            });
         });
 
         // Save settings when changed
@@ -183,15 +192,14 @@ class FileManagerApp {
                 this.currentFiles = result.files || [];
                 this.currentPath = result.path;
                 
-                // Update UI
+                // Update UI Basics
                 this.currentPathElement.textContent = this.currentPath;
-                this.fileCountElement.textContent = result.file_count || 0;
                 
-                // Calculate total size
-                this.totalSize = this.currentFiles.reduce((sum, file) => sum + (file.size || 0), 0);
-                this.totalSizeElement.textContent = this.formatFileSize(this.totalSize);
-                
-                // Update file table
+                // Default Sort: Name (ASC) + Folder First
+                this.sortCriteria = { key: 'name', direction: 'asc' };
+                this.sortFiles();
+
+                // Update file table (handles stats and sorting)
                 this.updateFileTable();
                 
                 this.showToast(`Found ${result.file_count} files/directories`, 'success');
@@ -252,23 +260,41 @@ class FileManagerApp {
                     let currentPath = file.path;
                     while (currentPath) {
                         pathsToKeep.add(currentPath);
-                        // Find parent path
                         const lastSlash = Math.max(currentPath.lastIndexOf('/'), currentPath.lastIndexOf('\\'));
                         if (lastSlash === -1) break;
                         currentPath = currentPath.substring(0, lastSlash);
                     }
                 }
             });
-            // Always keep the base path
             pathsToKeep.add(this.currentPath);
         }
+
+        // Strictly ordered by hierarchical path for the tree view
+        let filesToDisplay = (pruneTree && query) 
+            ? files.filter(f => pathsToKeep.has(f.path))
+            : [...files];
+
+        // Ensure the tree always uses a stable hierarchical pre-order (Folder First + Alphabetical)
+        // regardless of the list's sort criteria.
+        filesToDisplay.sort((a, b) => {
+            const partsA = a.path.split(/[/\\]/).filter(Boolean);
+            const partsB = b.path.split(/[/\\]/).filter(Boolean);
+            const len = Math.min(partsA.length, partsB.length);
+            for (let i = 0; i < len; i++) {
+                if (partsA[i] !== partsB[i]) {
+                    const isDirA = (i < partsA.length - 1) || a.is_directory;
+                    const isDirB = (i < partsB.length - 1) || b.is_directory;
+                    if (isDirA !== isDirB) return isDirA ? -1 : 1;
+                    return partsA[i].localeCompare(partsB[i], undefined, { numeric: true });
+                }
+            }
+            return partsA.length - partsB.length;
+        });
 
         let output = '';
         
         // 1. Output Root Directory
-        let rootName = this.currentPath.split(/[/\\]/).filter(Boolean).pop();
-        if (!rootName && this.currentPath === '.') rootName = 'root';
-        if (!rootName) rootName = this.currentPath;
+        let rootName = this.currentPath.split(/[/\\]/).filter(Boolean).pop() || 'root';
         rootName += '/';
         
         let displayRootName = rootName;
@@ -283,39 +309,26 @@ class FileManagerApp {
             output += `${rootName}\n`;
         }
         
-        // Filter files to display
-        const filesToDisplay = (pruneTree && query) 
-            ? files.filter(f => pathsToKeep.has(f.path))
-            : files;
-
         // Track the "is last child" status for each depth level
-        const isLastAtDepth = new Array(100).fill(false);
-        
-        // Helper to check if a file is the last child of its parent (among visible files)
-        const checkIsLast = (index, currentDepth) => {
-            for (let i = index + 1; i < filesToDisplay.length; i++) {
-                const nextFile = filesToDisplay[i];
-                if (nextFile.depth < currentDepth) return true;
-                if (nextFile.depth === currentDepth) return false;
-            }
-            return true;
-        };
+        const isLastAtDepth = [];
 
         for (let i = 0; i < filesToDisplay.length; i++) {
             const file = filesToDisplay[i];
             
-            const isLast = checkIsLast(i, file.depth);
+            // O(N) optimized check for last child in a hierarchical pre-order list
+            const isLast = (i === filesToDisplay.length - 1) || (filesToDisplay[i + 1].depth < file.depth);
             isLastAtDepth[file.depth] = isLast;
 
+            // Indentation
             for (let d = 1; d < file.depth; d++) {
                 output += isLastAtDepth[d] ? '    ' : '│   ';
             }
 
+            // Connector
             output += isLast ? '└── ' : '├── ';
 
             const iconChar = file.is_directory ? '📁' : '📄';
-            let fileName = file.name;
-            if (file.is_directory) fileName += '/';
+            let fileName = file.name + (file.is_directory ? '/' : '');
             
             let displayName = fileName;
             if (asHtml && query && fileName.toLowerCase().includes(lowerQuery)) {
@@ -330,8 +343,7 @@ class FileManagerApp {
             }
 
             if (this.showSizeCheckbox.checked) {
-                const sizeStr = this.formatFileSize(file.size || 0);
-                output += ` (${sizeStr})`;
+                output += ` (${this.formatFileSize(file.size || 0)})`;
             }
 
             output += '\n';
@@ -440,36 +452,65 @@ class FileManagerApp {
     }
 
     updateFileTable(query = '') {
-        if (this.currentFiles.length === 0) {
-            this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No files scanned yet</td></tr>';
-            return;
-        }
-        
-        let html = '';
+        // Visual Feedback: Start processing
+        this.fileTableBody.style.opacity = '0.6';
+
+        // Update header UI
+        document.querySelectorAll('.sticky-header thead th[data-sort]').forEach(th => {
+            const key = th.getAttribute('data-sort');
+            const icon = th.querySelector('.sort-icon');
+            
+            if (key === this.sortCriteria.key) {
+                th.classList.add('active-sort');
+                icon.className = `sort-icon fas fa-sort-${this.sortCriteria.direction === 'asc' ? 'up' : 'down'}`;
+            } else {
+                th.classList.remove('active-sort');
+                icon.className = 'sort-icon fas fa-sort';
+            }
+        });
+
         const lowerQuery = query.toLowerCase();
         const filteredFiles = query 
             ? this.currentFiles.filter(file => file.name.toLowerCase().includes(lowerQuery))
             : this.currentFiles;
 
-        if (filteredFiles.length === 0 && query !== '') {
-            this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No matching files found</td></tr>';
+        // Sync Search Statistics
+        const filteredSize = filteredFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+        if (query) {
+            this.fileCountElement.textContent = `Found ${filteredFiles.length}`;
+            this.totalSizeElement.textContent = `(${this.formatFileSize(filteredSize)})`;
+        } else {
+            this.fileCountElement.textContent = this.currentFiles.length;
+            this.totalSizeElement.textContent = this.formatFileSize(filteredSize);
+        }
+
+        if (this.currentFiles.length === 0) {
+            this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No files scanned yet</td></tr>';
+            this.fileTableBody.style.opacity = '1';
             return;
         }
 
+        if (filteredFiles.length === 0 && query !== '') {
+            this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No matching files found</td></tr>';
+            this.fileTableBody.style.opacity = '1';
+            return;
+        }
+
+        // Build entire HTML string once to minimize reflows
+        let htmlString = '';
         filteredFiles.forEach(file => {
             const type = file.is_directory ? 'Directory' : 'File';
             const typeClass = file.is_directory ? 'directory' : 'file';
             const size = this.formatFileSize(file.size || 0);
             const icon = this.getFileIcon(file.name, file.is_directory);
             
-            // Highlight name
             let displayName = file.name;
             if (query) {
                 const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
                 displayName = file.name.replace(regex, '<mark class="highlight">$1</mark>');
             }
 
-            html += `
+            htmlString += `
                 <tr data-path="${file.path.replace(/"/g, '&quot;')}">
                     <td>
                         <div class="file-name-cell">
@@ -484,9 +525,10 @@ class FileManagerApp {
             `;
         });
         
-        this.fileTableBody.innerHTML = html;
+        this.fileTableBody.innerHTML = htmlString;
+        this.fileTableBody.style.opacity = '1';
 
-        // Add event listeners to rows
+        // Add event listeners
         const rows = this.fileTableBody.querySelectorAll('tr');
         rows.forEach(row => {
             row.addEventListener('dblclick', () => {
@@ -589,6 +631,7 @@ class FileManagerApp {
             
             if (state.currentFiles) {
                 this.currentFiles = state.currentFiles;
+                this.sortFiles();
                 this.updateFileTable();
                 
                 // Regenerate tree view
@@ -609,6 +652,74 @@ class FileManagerApp {
         } catch (e) {
             console.error("Failed to load state", e);
         }
+    }
+
+    handleSort(key) {
+        if (this.sortCriteria.key === key) {
+            this.sortCriteria.direction = this.sortCriteria.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortCriteria.key = key;
+            this.sortCriteria.direction = 'asc';
+        }
+        
+        this.sortFiles();
+        this.updateFileTable(this.listFilterInput.value.trim());
+    }
+
+    sortFiles() {
+        const { key, direction } = this.sortCriteria;
+        const multiplier = direction === 'asc' ? 1 : -1;
+
+        // Path-aware Hierarchical Sort
+        // Priority 1: Hierarchy (Parent paths stay together)
+        // Priority 2: Folder First (Directories before files at the same level)
+        // Priority 3: Active Criteria (Name, Size, Depth, etc.)
+        this.currentFiles.sort((a, b) => {
+            if (a.path === b.path) return 0;
+
+            const partsA = a.path.split(/[/\\]/).filter(Boolean);
+            const partsB = b.path.split(/[/\\]/).filter(Boolean);
+            const len = Math.min(partsA.length, partsB.length);
+
+            for (let i = 0; i < len; i++) {
+                if (partsA[i] !== partsB[i]) {
+                    // Difference found at this level of the path
+                    const isLastA = i === partsA.length - 1;
+                    const isLastB = i === partsB.length - 1;
+                    
+                    // Determine if the current segments are directories
+                    const isDirA = !isLastA || a.is_directory;
+                    const isDirB = !isLastB || b.is_directory;
+
+                    // Folder First Logic (within the same level)
+                    if (isDirA !== isDirB) {
+                        return isDirA ? -1 : 1;
+                    }
+
+                    // If both are at their leaf level, apply sort criteria
+                    if (isLastA && isLastB) {
+                        switch (key) {
+                            case 'size':
+                                const sizeDiff = (a.size || 0) - (b.size || 0);
+                                if (sizeDiff !== 0) return multiplier * sizeDiff;
+                                break;
+                            case 'depth':
+                                const depthDiff = (a.depth || 0) - (b.depth || 0);
+                                if (depthDiff !== 0) return multiplier * depthDiff;
+                                break;
+                        }
+                        // Default to natural name sorting within the same type
+                        return multiplier * partsA[i].localeCompare(partsB[i], undefined, { numeric: true, sensitivity: 'base' });
+                    }
+
+                    // For intermediate directory segments, always use natural alphabetical sort
+                    return partsA[i].localeCompare(partsB[i], undefined, { numeric: true });
+                }
+            }
+
+            // If one path is a prefix of another, the parent comes first
+            return partsA.length - partsB.length;
+        });
     }
 
     applySearch(pruneTree = false) {
