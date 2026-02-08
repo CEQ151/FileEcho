@@ -33,7 +33,6 @@ private:
     void setup_routes();
     
     // HTTP请求处理函数
-    void handle_root(const httplib::Request& req, httplib::Response& res);
     void handle_scan(const httplib::Request& req, httplib::Response& res);
     void handle_tree(const httplib::Request& req, httplib::Response& res);
     void handle_download(const httplib::Request& req, httplib::Response& res);

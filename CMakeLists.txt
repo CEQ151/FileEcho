@@ -24,7 +24,7 @@ endif()
 
 
 # 创建可执行文件 (WIN32 隐藏黑窗口)
-add_executable(FileEcho WIN32 ${SOURCES} ${SOURCES} ${RESOURCE_FILES})
+add_executable(FileEcho WIN32 ${SOURCES} ${RESOURCE_FILES})
 
 if(WIN32)
     # 链接所有必要的 Windows 系统库
@@ -44,10 +44,10 @@ if(WIN32)
     endif()
 endif()
 
-# 自动拷贝前端资源到 build 目录
-add_custom_command(TARGET FileEcho POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    "${CMAKE_SOURCE_DIR}/src/frontend"
-    "${CMAKE_BINARY_DIR}/frontend"
-    COMMENT "Copying frontend resources to build directory..."
-)
+# 自动拷贝前端资源到 build 目录 (已改为单文件部署，此处不再需要)
+# add_custom_command(TARGET FileEcho POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory
+#     "${CMAKE_SOURCE_DIR}/src/frontend"
+#     "${CMAKE_BINARY_DIR}/frontend"
+#     COMMENT "Copying frontend resources to build directory..."
+# )

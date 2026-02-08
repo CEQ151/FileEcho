@@ -38,8 +38,6 @@ bool WebServer::start(int port) {
     
     setup_routes();
     
-    // 设置静态文件目录
-    server_->set_base_dir("./frontend");
     server_->set_payload_max_length(100 * 1024 * 1024); // 100MB
     
     server_thread_ = make_unique<thread>([this]() {
@@ -62,10 +60,18 @@ void WebServer::stop() {
 }
 
 void WebServer::setup_routes() {
-    server_->Get("/", [this](const httplib::Request&, httplib::Response& res) {
-        handle_root(httplib::Request(), res); // Hack: 简单的重定向不依赖 req
+    // 设置全局默认头部处理 CORS
+    server_->set_default_headers({
+        {"Access-Control-Allow-Origin", "*"},
+        {"Access-Control-Allow-Methods", "GET, POST, OPTIONS"},
+        {"Access-Control-Allow-Headers", "Content-Type"}
     });
-    
+
+    // 处理 OPTIONS 预检请求
+    server_->Options(R"(/api/.*)", [](const httplib::Request&, httplib::Response& res) {
+        res.status = 200;
+    });
+
     server_->Post("/api/scan", [this](const httplib::Request& req, httplib::Response& res) {
         handle_scan(req, res);
     });
@@ -85,10 +91,6 @@ void WebServer::setup_routes() {
     server_->Post("/api/open", [this](const httplib::Request& req, httplib::Response& res) {
         handle_open(req, res);
     });
-}
-
-void WebServer::handle_root(const httplib::Request&, httplib::Response& res) {
-    res.set_redirect("/index.html");
 }
 
 void WebServer::handle_scan(const httplib::Request& req, httplib::Response& res) {
