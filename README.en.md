@@ -12,6 +12,9 @@
 
 **FileEcho** is a modern, high-performance local file scanning and management tool designed for developers and system administrators. It combines the native performance of C++17 with efficient Web technology interactions. In version v1.0.5, it achieves **full resource embedding**, generating a single executable file that requires no installation and works out of the box.
 
+<img width="2559" height="1475" alt="6" src="https://github.com/user-attachments/assets/d2390bb1-2a52-449e-838f-8587926ecff1" />
+
+
 ## ✨ Core Features
 
 ### 1. High-speed Scanning & Multi-dimensional Sorting
