@@ -22,7 +22,6 @@
 #include <winsock2.h>  // 必须在 webview.h (包含 windows.h) 之前引入，解决 httplib 警告
 #include "webview.h"   // 核心 GUI 库
 #include "webserver.hpp" // 后端服务器
-#include "assets.hpp"    // 嵌入式前端资源
 
 #include <iostream>
 #include <string>
@@ -67,13 +66,13 @@ int main(int argc, char* argv[]) {
         }
     });
 
-    // 【重要】增加等待时间，确保后端服务器线程已完全 Ready
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    // 等待服务器启动
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
 
     try {
         // 3. 创建 GUI 窗口
-        // 【关键修改】debug 设为 false 以禁用 F12 开发者工具和原生右键菜单
-        webview::webview w(false, nullptr); 
+        // 【关键修复】现在 WEBVIEW_WINAPI 已定义，webview 类可以正常使用了
+        webview::webview w(true, nullptr); 
 
         w.set_title("FileEcho - Scan Deep, Echo Clear");
         
@@ -95,9 +94,8 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        // 获取并加载嵌入的前端资源
-        std::string bundled_html = assets::get_bundled_html(port);
-        w.set_html(bundled_html);
+        std::string url = "http://localhost:" + std::to_string(port);
+        w.navigate(url);
 
         // 阻塞主线程直到窗口关闭
         w.run();

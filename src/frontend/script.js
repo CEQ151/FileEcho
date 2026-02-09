@@ -1,3 +1,215 @@
+class Starfield {
+    constructor() {
+        this.canvas = document.createElement('canvas');
+        this.canvas.id = 'starfield-canvas';
+        this.canvas.style.position = 'fixed';
+        this.canvas.style.top = '0';
+        this.canvas.style.left = '0';
+        this.canvas.style.width = '100%';
+        this.canvas.style.height = '100%';
+        this.canvas.style.pointerEvents = 'none';
+        this.canvas.style.zIndex = '0'; // 修改为 0，确保在背景之上
+        this.ctx = this.canvas.getContext('2d');
+        this.stars = [];
+        this.animationId = null;
+        this.active = false;
+        
+        this.resizeHandler = () => this.resize();
+    }
+
+    mount() {
+        if (!document.body.contains(this.canvas)) {
+            document.body.appendChild(this.canvas);
+        }
+        window.addEventListener('resize', this.resizeHandler);
+        this.resize();
+        this.initStars();
+        this.active = true;
+        this.animate();
+    }
+
+    unmount() {
+        this.active = false;
+        window.removeEventListener('resize', this.resizeHandler);
+        if (this.animationId) cancelAnimationFrame(this.animationId);
+        if (this.canvas.parentNode) this.canvas.parentNode.removeChild(this.canvas);
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    initStars() {
+        this.stars = [];
+        this.active = true;
+        const count = 500; // 进一步增加星星数量
+        for (let i = 0; i < count; i++) {
+            this.stars.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                size: Math.random() * 2.8, // 增大星星
+                opacity: Math.random() * 0.9 + 0.1, // 提高亮度
+                speed: Math.random() * 0.15 + 0.05
+            });
+        }
+    }
+
+    animate() {
+        if (!this.active) return;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        for (let star of this.stars) {
+            this.ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+            this.ctx.beginPath();
+            this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+            this.ctx.fill();
+            
+            star.opacity += (Math.random() - 0.5) * 0.05;
+            if (star.opacity < 0.1) star.opacity = 0.1;
+            if (star.opacity > 0.8) star.opacity = 0.8;
+            
+            star.y += star.speed;
+            if (star.y > this.canvas.height) {
+                star.y = 0;
+                star.x = Math.random() * this.canvas.width;
+            }
+        }
+        
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+}
+
+const translations = {
+    en: {
+        language: "Language",
+        fileInfo: "File Info",
+        noPathSelected: "No path selected",
+        files: "Files",
+        targetAddress: "Target Address",
+        pathPlaceholder: "Absolute path...",
+        settings: "Settings",
+        theme: "Theme",
+        themeLight: "Default Light",
+        themeObsidian: "Obsidian",
+        themeSublime: "Sublime",
+        themeWindows: "Windows Dark",
+        themeDracula: "Dracula",
+        themeSpace: "Deep Space",
+        maxDepth: "Max Depth",
+        excludes: "Excludes",
+        excludesPlaceholder: "node_modules, .git",
+        showSize: "Show Size",
+        cleanup: "Cleanup",
+        clearResults: "Clear Results",
+        resetAllData: "Reset All Data",
+        viewOnGitHub: "View on GitHub",
+        treeView: "File Tree",
+        treePlaceholder: "Enter path in sidebar and scan.",
+        refresh: "Refresh",
+        copy: "Copy",
+        download: "Download",
+        listView: "File Details",
+        filterPlaceholder: "Filter current list (Press Enter to prune tree)...",
+        name: "Name",
+        type: "Type",
+        size: "Size",
+        depth: "Depth",
+        scanning: "Scanning directory...",
+        foundFiles: "Found {count} files/directories",
+        scanFailed: "Scan failed: {message}",
+        scanError: "Scan error: {message}",
+        pleaseScanFirst: "Please scan a directory first",
+        treeGenError: "Tree generation error: {message}",
+        noFilesFound: "No files found.",
+        downloadStarted: "Download started",
+        downloadStartedSearch: "Download started (search: \"{query}\")",
+        downloadError: "Download error: {message}",
+        noFilesToCopy: "No files to copy",
+        noTreeToCopy: "No tree to copy",
+        treeCopied: "Tree copied to clipboard!",
+        copyFailed: "Failed to copy: {message}",
+        resultsCleared: "Results cleared",
+        confirmReset: "Are you sure you want to clear all data and settings?",
+        allDataCleared: "All data cleared",
+        serverConnected: "Server connected successfully",
+        serverDisconnected: "Disconnected",
+        apiNotAvailable: "API: Not available",
+        serverNotResponding: "Server not responding",
+        cannotConnect: "Cannot connect to server",
+        connected: "Connected",
+        noFilesScanned: "No files scanned yet",
+        noMatchingFiles: "No matching files found",
+        doubleClickToOpen: "Double-click to open",
+        directory: "Directory",
+        file: "File"
+    },
+    zh: {
+        language: "界面语言",
+        fileInfo: "文件信息",
+        noPathSelected: "未选择路径",
+        files: "个文件",
+        targetAddress: "目标地址",
+        pathPlaceholder: "输入绝对路径...",
+        settings: "设置",
+        theme: "界面主题",
+        themeLight: "经典白色",
+        themeObsidian: "Obsidian 紫黑",
+        themeSublime: "Sublime 暖灰",
+        themeWindows: "Windows 深色",
+        themeDracula: "Dracula 高对比",
+        themeSpace: "深邃太空",
+        maxDepth: "最大深度",
+        excludes: "排除模式",
+        excludesPlaceholder: "例如: node_modules, .git",
+        showSize: "显示大小",
+        cleanup: "清理",
+        clearResults: "清除结果",
+        resetAllData: "重置所有数据",
+        viewOnGitHub: "在 GitHub 上查看",
+        treeView: "文件树",
+        treePlaceholder: "在侧边栏输入路径并扫描以查看树状图。",
+        refresh: "刷新",
+        copy: "复制",
+        download: "下载",
+        listView: "文件详情",
+        filterPlaceholder: "过滤当前列表 (回车可精简树状图)...",
+        name: "名称",
+        type: "类型",
+        size: "大小",
+        depth: "深度",
+        scanning: "正在扫描目录...",
+        foundFiles: "找到 {count} 个文件/目录",
+        scanFailed: "扫描失败: {message}",
+        scanError: "扫描错误: {message}",
+        pleaseScanFirst: "请先扫描一个目录",
+        treeGenError: "树状图生成错误: {message}",
+        noFilesFound: "未找到文件。",
+        downloadStarted: "下载已开始",
+        downloadStartedSearch: "下载已开始 (搜索关键字: \"{query}\")",
+        downloadError: "下载错误: {message}",
+        noFilesToCopy: "没有可复制的文件",
+        noTreeToCopy: "没有可复制的树状图",
+        treeCopied: "树状图已复制到剪贴板！",
+        copyFailed: "复制失败: {message}",
+        resultsCleared: "结果已清除",
+        confirmReset: "确定要清除所有数据和设置吗？",
+        allDataCleared: "所有数据已清除",
+        serverConnected: "服务器连接成功",
+        serverDisconnected: "未连接",
+        apiNotAvailable: "API: 不可用",
+        serverNotResponding: "服务器无响应",
+        cannotConnect: "无法连接到服务器",
+        connected: "已连接",
+        noFilesScanned: "尚未扫描文件",
+        noMatchingFiles: "未找到匹配的文件",
+        doubleClickToOpen: "双击以打开",
+        directory: "目录",
+        file: "文件"
+    }
+};
+
 class FileManagerApp {
     constructor() {
         this.apiBaseUrl = window.location.origin;
@@ -6,18 +218,31 @@ class FileManagerApp {
         this.totalSize = 0;
         this.sortCriteria = { key: 'name', direction: 'asc' };
         this.collapsedPaths = new Set(); // Stores paths of collapsed directories
+        this.language = 'en';
+        this.theme = 'light';
         
         this.initElements();
         this.initEventListeners();
         this.checkServerStatus();
         this.loadState(); // Load saved state on startup
+        this.updateLanguage(); // Initial language apply
+        this.applyTheme(); // Initial theme apply
     }
     
     initElements() {
+        // Language & Theme
+        this.languageSelect = document.getElementById('language-select');
+        this.themeSelect = document.getElementById('theme-select');
+
         // Sidebar elements
         this.sidebar = document.getElementById('sidebar');
         this.sidebarToggleBtn = document.getElementById('sidebar-toggle-btn');
+        this.sidebarResizer = document.getElementById('sidebar-resizer');
         this.githubBtn = document.getElementById('github-btn');
+
+        // Folder selection
+        this.folderSelector = document.getElementById('folder-selector');
+        this.selectFolderBtn = document.getElementById('select-folder-btn');
 
         // Settings elements
         this.showSizeCheckbox = document.getElementById('show-size');
@@ -34,7 +259,6 @@ class FileManagerApp {
         this.downloadBtn = document.getElementById('download-btn');
         this.copyBtn = document.getElementById('copy-btn');
         this.clearBtn = document.getElementById('clear-btn'); 
-        this.clearAllBtn = document.getElementById('clear-all-btn'); 
         this.scanBtn = document.getElementById('scan-btn'); // New Scan button in sidebar
         
         // Input elements
@@ -51,8 +275,43 @@ class FileManagerApp {
     }
     
     initEventListeners() {
+        // Language switch
+        this.languageSelect.addEventListener('change', (e) => {
+            this.language = e.target.value;
+            this.updateLanguage();
+            this.saveState();
+        });
+
+        // Theme switch
+        this.themeSelect.addEventListener('change', (e) => {
+            this.theme = e.target.value;
+            this.applyTheme();
+            this.saveState();
+        });
+
         // Sidebar Toggle
         this.sidebarToggleBtn.addEventListener('click', () => this.toggleSidebar());
+
+        // Native Folder Selector via Backend
+        this.selectFolderBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch(`${this.apiBaseUrl}/api/pick-folder`);
+                const result = await response.json();
+                
+                if (result.success && result.path) {
+                    // Action 1: Update UI
+                    this.directoryPathInput.value = result.path;
+                    // Action 2: Auto Scan
+                    this.scanDirectory(true);
+                } else if (result.message && !result.message.includes('cancelled')) {
+                    this.showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Failed to pick folder:', error);
+                // Fallback to hidden input if API fails
+                this.folderSelector.click();
+            }
+        });
 
         // GitHub Button
         this.githubBtn.addEventListener('click', () => {
@@ -65,7 +324,6 @@ class FileManagerApp {
         this.downloadBtn.addEventListener('click', () => this.downloadTree());
         this.copyBtn.addEventListener('click', () => this.copyTreeToClipboard());
         this.clearBtn.addEventListener('click', () => this.clearResults());
-        this.clearAllBtn.addEventListener('click', () => this.clearAllData());
         
         // Input events
         this.directoryPathInput.addEventListener('keypress', (e) => {
@@ -151,6 +409,78 @@ class FileManagerApp {
             icon.className = 'fas fa-bars'; // 展开时显示菜单图标
         }
     }
+
+    updateLanguage() {
+        const langData = translations[this.language];
+        
+        // Update elements with data-i18n
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (langData[key]) {
+                // If it's the tree output and it's empty/placeholder, update it
+                if (key === 'treePlaceholder' && (this.treeOutput.innerHTML === '' || this.treeOutput.innerHTML.includes('sidebar') || this.treeOutput.innerHTML.includes('侧边栏'))) {
+                     el.textContent = langData[key];
+                } else if (key !== 'treePlaceholder') {
+                    el.textContent = langData[key];
+                }
+            }
+        });
+
+        // Update placeholders
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (langData[key]) {
+                el.placeholder = langData[key];
+            }
+        });
+
+        // Update language select value
+        if (this.languageSelect) {
+            this.languageSelect.value = this.language;
+        }
+
+        // Special case for dynamic text if already displayed
+        if (!this.currentPath) {
+            this.currentPathElement.textContent = langData.noPathSelected;
+        }
+
+        // Refresh dynamic UI components
+        if (this.currentFiles.length > 0) {
+            this.updateFileTable(this.listFilterInput.value.trim());
+        }
+    }
+
+    applyTheme() {
+        // Set data-theme attribute
+        document.documentElement.setAttribute('data-theme', this.theme);
+
+        // Update select UI
+        if (this.themeSelect) {
+            this.themeSelect.value = this.theme;
+        }
+        
+        // Handle Deep Space Starfield
+        if (this.theme === 'space') {
+            if (!this.starfield) {
+                this.starfield = new Starfield();
+            }
+            if (!this.starfield.active) {
+                this.starfield.mount();
+            }
+        } else {
+            if (this.starfield && this.starfield.active) {
+                this.starfield.unmount();
+            }
+        }
+    }
+
+    t(key, params = {}) {
+        let text = translations[this.language][key] || key;
+        for (const [k, v] of Object.entries(params)) {
+            text = text.replace(`{${k}}`, v);
+        }
+        return text;
+    }
     
     // Upload functions removed
 
@@ -181,11 +511,11 @@ class FileManagerApp {
         const path = this.directoryPathInput.value.trim();
         
         if (!path) {
-            this.showToast('Please enter a directory path', 'warning');
+            this.showToast(this.t('pathPlaceholder'), 'warning');
             return;
         }
         
-        this.showToast('Scanning directory...', 'info');
+        this.showToast(this.t('scanning'), 'info');
         
         try {
             const options = this.getTreeOptions();
@@ -220,7 +550,7 @@ class FileManagerApp {
                 // Reset collapsed state on new scan
                 this.collapsedPaths.clear();
                 
-                this.showToast(`Found ${result.file_count} files/directories`, 'success');
+                this.showToast(this.t('foundFiles', { count: result.file_count }), 'success');
                 
                 // Auto generate tree if requested
                 if (autoGenerate) {
@@ -229,10 +559,10 @@ class FileManagerApp {
 
                 this.saveState();
             } else {
-                this.showToast(`Scan failed: ${result.message}`, 'error');
+                this.showToast(this.t('scanFailed', { message: result.message }), 'error');
             }
         } catch (error) {
-            this.showToast(`Scan error: ${error.message}`, 'error');
+            this.showToast(this.t('scanError', { message: error.message }), 'error');
         }
     }
     
@@ -243,7 +573,7 @@ class FileManagerApp {
                 await this.scanDirectory(false); // prevent infinite loop
                 if (this.currentFiles.length === 0) return;
             } else {
-                this.showToast('Please scan a directory first', 'warning');
+                this.showToast(this.t('pleaseScanFirst'), 'warning');
                 return;
             }
         }
@@ -260,14 +590,14 @@ class FileManagerApp {
             this.treeOutput.innerHTML = treeHtml;
             this.saveState();
         } catch (error) {
-            this.showToast(`Tree generation error: ${error.message}`, 'error');
+            this.showToast(this.t('treeGenError', { message: error.message }), 'error');
             console.error(error);
         }
     }
     
     // Generate tree content (HTML or Plain Text)
     generateTreeContent(asHtml, query = '', pruneTree = false, visiblePaths = null) {
-        if (this.currentFiles.length === 0) return asHtml ? '' : 'No files found.';
+        if (this.currentFiles.length === 0) return asHtml ? '' : this.t('noFilesFound');
 
         const files = this.currentFiles;
         const lowerQuery = query.toLowerCase();
@@ -404,7 +734,7 @@ class FileManagerApp {
 
     async downloadTree() {
         if (this.currentFiles.length === 0) {
-            this.showToast('Please scan a directory first', 'warning');
+            this.showToast(this.t('pleaseScanFirst'), 'warning');
             return;
         }
         
@@ -455,10 +785,12 @@ class FileManagerApp {
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
             
-            const toastMsg = isSearchActive ? `Download started (search: "${searchQuery}")` : 'Download started';
+            const toastMsg = isSearchActive 
+                ? this.t('downloadStartedSearch', { query: searchQuery }) 
+                : this.t('downloadStarted');
             this.showToast(toastMsg, 'success');
         } catch (error) {
-            this.showToast(`Download error: ${error.message}`, 'error');
+            this.showToast(this.t('downloadError', { message: error.message }), 'error');
         }
     }
     
@@ -466,7 +798,7 @@ class FileManagerApp {
 
     async copyTreeToClipboard() {
         if (this.currentFiles.length === 0) {
-            this.showToast('No files to copy', 'warning');
+            this.showToast(this.t('noFilesToCopy'), 'warning');
             return;
         }
 
@@ -476,50 +808,35 @@ class FileManagerApp {
         // Use plain text for clipboard, matching current visible state
         const treeText = this.generateTreeContent(false, query, isSearchActive);
         
-        if (!treeText || treeText === 'No files found.') {
-            this.showToast('No tree to copy', 'warning');
+        if (!treeText || treeText === this.t('noFilesFound')) {
+            this.showToast(this.t('noTreeToCopy'), 'warning');
             return;
         }
         
         try {
             await navigator.clipboard.writeText(treeText);
-            this.showToast('Tree copied to clipboard!', 'success');
+            this.showToast(this.t('treeCopied'), 'success');
         } catch (error) {
-            this.showToast(`Failed to copy: ${error.message}`, 'error');
+            this.showToast(this.t('copyFailed', { message: error.message }), 'error');
         }
     }
 
     clearResults() {
-        this.treeOutput.innerHTML = 'Select a folder and click "Generate Tree" to see the file structure here.';
-        this.currentFiles = [];
+        // Hard Clear Logic
+        this.directoryPathInput.value = ''; // Clear Path Input Box
+        this.currentFiles = []; // Empty internal data
         this.currentPath = '';
         this.totalSize = 0;
         
-        // Update UI
-        this.currentPathElement.textContent = 'No folder selected';
+        this.treeOutput.innerHTML = ''; // Clear DOM (Tree)
+        this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noFilesScanned')}</td></tr>`; // Clear DOM (Table)
+        
+        // Update Status UI
+        this.currentPathElement.textContent = this.t('noPathSelected');
         this.fileCountElement.textContent = '0';
         this.totalSizeElement.textContent = '0 B';
         
-        // Clear file table
-        this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No files scanned yet</td></tr>';
-        
-        this.showToast('Results cleared', 'success');
-    }
-    
-    clearAllData() {
-        if (!confirm('Are you sure you want to clear all data and settings?')) return;
-        
-        localStorage.removeItem('fmg_state');
-        this.clearResults();
-        this.directoryPathInput.value = '';
-        
-        // Reset settings to defaults
-        this.showSizeCheckbox.checked = true;
-        // humanReadableCheckbox removed
-        this.maxDepthInput.value = -1;
-        this.excludePatternsInput.value = '';
-        
-        this.showToast('All data cleared', 'success');
+        this.showToast(this.t('resultsCleared'), 'success');
     }
     
     getTreeOptions() {
@@ -567,21 +884,21 @@ class FileManagerApp {
         // Sync Search Statistics
         const filteredSize = filteredFiles.reduce((sum, file) => sum + (file.size || 0), 0);
         if (query) {
-            this.fileCountElement.textContent = `Found ${filteredFiles.length}`;
+            this.fileCountElement.textContent = this.t('foundFiles', { count: filteredFiles.length });
             this.totalSizeElement.textContent = `(${this.formatFileSize(filteredSize)})`;
         } else {
-            this.fileCountElement.textContent = this.currentFiles.length;
+            this.fileCountElement.textContent = filteredFiles.length;
             this.totalSizeElement.textContent = this.formatFileSize(filteredSize);
         }
 
         if (this.currentFiles.length === 0) {
-            this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No files scanned yet</td></tr>';
+            this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noFilesScanned')}</td></tr>`;
             this.fileTableBody.style.opacity = '1';
             return;
         }
 
         if (filteredFiles.length === 0 && query !== '') {
-            this.fileTableBody.innerHTML = '<tr><td colspan="4" class="empty-message">No matching files found</td></tr>';
+            this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noMatchingFiles')}</td></tr>`;
             this.fileTableBody.style.opacity = '1';
             return;
         }
@@ -589,7 +906,7 @@ class FileManagerApp {
         // Build entire HTML string once to minimize reflows
         let htmlString = '';
         filteredFiles.forEach(file => {
-            const type = file.is_directory ? 'Directory' : 'File';
+            const type = file.is_directory ? this.t('directory') : this.t('file');
             const typeClass = file.is_directory ? 'directory' : 'file';
             const size = this.formatFileSize(file.size || 0);
             const icon = this.getFileIcon(file.name, file.is_directory);
@@ -626,7 +943,7 @@ class FileManagerApp {
                 this.openItem(filePath);
             });
             row.style.cursor = 'pointer';
-            row.title = "Double-click to open"; 
+            row.title = this.t('doubleClickToOpen'); 
         });
     }
     
@@ -645,18 +962,18 @@ class FileManagerApp {
             const response = await fetch(`${this.apiBaseUrl}/api/info`);
             if (response.ok) {
                 const data = await response.json();
-                this.serverStatusElement.textContent = 'Connected';
+                this.serverStatusElement.textContent = this.t('connected');
                 this.apiStatusElement.textContent = `API: v${data.version}`;
-                this.showToast('Server connected successfully', 'success');
+                this.showToast(this.t('serverConnected'), 'success');
             } else {
-                this.serverStatusElement.textContent = 'Disconnected';
-                this.apiStatusElement.textContent = 'API: Not available';
-                this.showToast('Server not responding', 'error');
+                this.serverStatusElement.textContent = this.t('serverDisconnected');
+                this.apiStatusElement.textContent = this.t('apiNotAvailable');
+                this.showToast(this.t('serverNotResponding'), 'error');
             }
         } catch (error) {
-            this.serverStatusElement.textContent = 'Disconnected';
-            this.apiStatusElement.textContent = 'API: Not available';
-            this.showToast('Cannot connect to server', 'error');
+            this.serverStatusElement.textContent = this.t('serverDisconnected');
+            this.apiStatusElement.textContent = this.t('apiNotAvailable');
+            this.showToast(this.t('cannotConnect'), 'error');
         }
     }
     
@@ -696,7 +1013,9 @@ class FileManagerApp {
             // Don't save tree output HTML, regenerate it from files
             currentFiles: this.currentFiles,
             currentPath: this.currentPath,
-            totalSize: this.totalSize
+            totalSize: this.totalSize,
+            language: this.language,
+            theme: this.theme
         };
         localStorage.setItem('fmg_state', JSON.stringify(state));
     }
@@ -707,6 +1026,14 @@ class FileManagerApp {
 
         try {
             const state = JSON.parse(saved);
+            
+            if (state.language) {
+                this.language = state.language;
+            }
+
+            if (state.theme) {
+                this.theme = state.theme;
+            }
             
             if (state.path) this.directoryPathInput.value = state.path;
             

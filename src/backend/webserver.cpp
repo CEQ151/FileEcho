@@ -9,6 +9,7 @@
 #include "utils.hpp"     // 使用新工具
 #ifdef _WIN32
 #include <shellapi.h>
+#include <shobjidl.h>
 #endif
 #include <iostream>
 #include <fstream>
@@ -38,6 +39,8 @@ bool WebServer::start(int port) {
     
     setup_routes();
     
+    // 设置静态文件目录
+    server_->set_base_dir("./frontend");
     server_->set_payload_max_length(100 * 1024 * 1024); // 100MB
     
     server_thread_ = make_unique<thread>([this]() {
@@ -60,18 +63,10 @@ void WebServer::stop() {
 }
 
 void WebServer::setup_routes() {
-    // 设置全局默认头部处理 CORS
-    server_->set_default_headers({
-        {"Access-Control-Allow-Origin", "*"},
-        {"Access-Control-Allow-Methods", "GET, POST, OPTIONS"},
-        {"Access-Control-Allow-Headers", "Content-Type"}
+    server_->Get("/", [this](const httplib::Request&, httplib::Response& res) {
+        handle_root(httplib::Request(), res); // Hack: 简单的重定向不依赖 req
     });
-
-    // 处理 OPTIONS 预检请求
-    server_->Options(R"(/api/.*)", [](const httplib::Request&, httplib::Response& res) {
-        res.status = 200;
-    });
-
+    
     server_->Post("/api/scan", [this](const httplib::Request& req, httplib::Response& res) {
         handle_scan(req, res);
     });
@@ -91,6 +86,14 @@ void WebServer::setup_routes() {
     server_->Post("/api/open", [this](const httplib::Request& req, httplib::Response& res) {
         handle_open(req, res);
     });
+
+    server_->Get("/api/pick-folder", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_pick_folder(req, res);
+    });
+}
+
+void WebServer::handle_root(const httplib::Request&, httplib::Response& res) {
+    res.set_redirect("/index.html");
 }
 
 void WebServer::handle_scan(const httplib::Request& req, httplib::Response& res) {
@@ -241,4 +244,51 @@ void WebServer::handle_open(const httplib::Request& req, httplib::Response& res)
     } catch (const exception& e) {
         res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
     }
+}
+
+void WebServer::handle_pick_folder(const httplib::Request& req, httplib::Response& res) {
+#ifndef _WIN32
+    res.set_content(json{{"success", false}, {"message", "Not supported on this platform"}}.dump(), "application/json");
+#else
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+    if (FAILED(hr)) {
+        res.set_content(json{{"success", false}, {"message", "COM initialization failed"}}.dump(), "application/json");
+        return;
+    }
+
+    IFileOpenDialog* pFileOpen;
+    hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL, IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+    if (SUCCEEDED(hr)) {
+        DWORD dwOptions;
+        if (SUCCEEDED(pFileOpen->GetOptions(&dwOptions))) {
+            pFileOpen->SetOptions(dwOptions | FOS_PICKFOLDERS);
+        }
+
+        hr = pFileOpen->Show(NULL);
+
+        if (SUCCEEDED(hr)) {
+            IShellItem* pItem;
+            hr = pFileOpen->GetResult(&pItem);
+            if (SUCCEEDED(hr)) {
+                PWSTR pszFilePath;
+                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                if (SUCCEEDED(hr)) {
+                    string path = Utils::ToUtf8(pszFilePath);
+                    CoTaskMemFree(pszFilePath);
+                    res.set_content(json{{"success", true}, {"path", path}}.dump(), "application/json");
+                }
+                pItem->Release();
+            }
+        } else {
+            res.set_content(json{{"success", false}, {"message", "User cancelled or dialog error"}}.dump(), "application/json");
+        }
+        pFileOpen->Release();
+    } else {
+        res.set_content(json{{"success", false}, {"message", "Failed to create dialog"}}.dump(), "application/json");
+    }
+
+    CoUninitialize();
+#endif
 }

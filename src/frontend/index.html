@@ -22,18 +22,46 @@
             </div>
 
             <div class="sidebar-scroll">
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-language"></i> <span data-i18n="language">Language</span>
+                    </div>
+                    <div class="setting-row">
+                        <select id="language-select" class="form-select-custom">
+                            <option value="en">English</option>
+                            <option value="zh">简体中文</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-palette"></i> <span data-i18n="theme">Theme</span>
+                    </div>
+                    <div class="setting-row">
+                        <select id="theme-select" class="form-select-custom">
+                            <option value="light" data-i18n="themeLight">Default Light</option>
+                            <option value="obsidian" data-i18n="themeObsidian">Obsidian</option>
+                            <option value="sublime" data-i18n="themeSublime">Sublime</option>
+                            <option value="windows" data-i18n="themeWindows">Windows Dark</option>
+                            <option value="dracula" data-i18n="themeDracula">Dracula</option>
+                            <option value="space" data-i18n="themeSpace">Deep Space</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="panel info-panel">
                     <div class="panel-header">
-                        <i class="fas fa-chart-pie"></i> File Info
+                        <i class="fas fa-chart-pie"></i> <span data-i18n="fileInfo">File Info</span>
                     </div>
                     <div class="info-content">
                         <div class="info-item" title="Current Path">
                             <i class="fas fa-folder-open"></i>
-                            <span id="current-path" class="text-ellipsis">No path selected</span>
+                            <span id="current-path" class="text-ellipsis" data-i18n="noPathSelected">No path selected</span>
                         </div>
                         <div class="info-item">
                             <i class="fas fa-file-alt"></i>
-                            <span id="file-count">0</span> Files
+                            <span id="file-count">0</span> <span data-i18n="files">Files</span>
                         </div>
                         <div class="info-item">
                             <i class="fas fa-hdd"></i>
@@ -44,54 +72,52 @@
 
                 <div class="panel">
                     <div class="panel-header">
-                        <i class="fas fa-search"></i> Target Address
+                        <i class="fas fa-search"></i> <span data-i18n="targetAddress">Target Address</span>
                     </div>
-                    <div class="input-group-compact d-flex gap-2">
-                        <input type="text" id="directory-path" class="form-control-compact" placeholder="Absolute path...">
-                        <button id="scan-btn" class="btn btn-primary btn-sm btn-icon-only">
-                            <i class="fas fa-search"></i>
-                        </button>
+                    <div class="search-container">
+                        <div class="search-row-1">
+                            <input type="text" id="directory-path" class="form-control-compact" data-i18n-placeholder="pathPlaceholder" placeholder="Absolute path...">
+                            <button id="scan-btn" class="btn btn-primary btn-sm btn-icon-only search-btn" title="Scan">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div class="search-row-2">
+                            <input type="file" id="folder-selector" webkitdirectory directory hidden>
+                            <button id="select-folder-btn" class="btn btn-outline-primary btn-sm btn-icon-only" title="Select Folder">
+                                <i class="fas fa-folder-open"></i>
+                            </button>
+                            <div class="spacer"></div>
+                            <button id="clear-btn" class="btn btn-outline-danger btn-sm btn-icon-only" title="Clear All">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
                 <div class="panel">
                     <div class="panel-header">
-                        <i class="fas fa-sliders-h"></i> Settings
+                        <i class="fas fa-sliders-h"></i> <span data-i18n="settings">Settings</span>
                     </div>
                     <div class="settings-grid">
                         <div class="setting-row">
-                            <label for="max-depth">Max Depth</label>
+                            <label for="max-depth" data-i18n="maxDepth">Max Depth</label>
                             <input type="number" id="max-depth" value="-1" min="-1" class="form-control-compact">
                         </div>
                         <div class="setting-row">
-                            <label for="exclude-patterns">Excludes</label>
-                            <input type="text" id="exclude-patterns" placeholder="node_modules, .git" class="form-control-compact">
+                            <label for="exclude-patterns" data-i18n="excludes">Excludes</label>
+                            <input type="text" id="exclude-patterns" data-i18n-placeholder="excludesPlaceholder" placeholder="node_modules, .git" class="form-control-compact">
                         </div>
                         <div class="setting-row checkbox-row">
                             <input type="checkbox" id="show-size" checked>
-                            <label for="show-size">Show Size</label>
+                            <label for="show-size" data-i18n="showSize">Show Size</label>
                         </div>
-                    </div>
-                </div>
-
-                <div class="panel">
-                    <div class="panel-header">
-                        <i class="fas fa-trash-alt"></i> Cleanup
-                    </div>
-                    <div class="d-grid gap-2">
-                        <button id="clear-btn" class="btn btn-sm btn-outline-secondary">
-                            <i class="fas fa-broom"></i> Clear Results
-                        </button>
-                        <button id="clear-all-btn" class="btn btn-sm btn-outline-danger">
-                            <i class="fas fa-trash"></i> Reset All Data
-                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="sidebar-footer">
                 <button id="github-btn" class="btn btn-github w-100">
-                    <i class="fab fa-github"></i> View on GitHub
+                    <i class="fab fa-github"></i> <span data-i18n="viewOnGitHub">View on GitHub</span>
                 </button>
             </div>
         </aside>
@@ -117,20 +143,20 @@
                 <!-- Left: Tree View -->
                 <section class="split-column tree-section">
                     <div class="column-header">
-                        <h3><i class="fas fa-stream"></i> File Tree</h3>
+                        <h3><i class="fas fa-stream"></i> <span data-i18n="treeView">File Tree</span></h3>
                     </div>
                     <div class="tree-viewport">
-                        <pre id="tree-output">Enter path in sidebar and scan.</pre>
+                        <pre id="tree-output" data-i18n="treePlaceholder">Enter path in sidebar and scan.</pre>
                     </div>
                     <div class="column-actions-bar">
                         <button id="generate-tree-btn" class="btn btn-outline-secondary btn-sm flex-fill">
-                            <i class="fas fa-sync"></i> Refresh
+                            <i class="fas fa-sync"></i> <span data-i18n="refresh">Refresh</span>
                         </button>
                         <button id="copy-btn" class="btn btn-outline-secondary btn-sm flex-fill">
-                            <i class="fas fa-copy"></i> Copy
+                            <i class="fas fa-copy"></i> <span data-i18n="copy">Copy</span>
                         </button>
                         <button id="download-btn" class="btn btn-outline-secondary btn-sm flex-fill">
-                            <i class="fas fa-download"></i> Download
+                            <i class="fas fa-download"></i> <span data-i18n="download">Download</span>
                         </button>
                     </div>
                 </section>
@@ -141,20 +167,20 @@
                 <!-- Right: File List -->
                 <section class="split-column list-section">
                     <div class="column-header">
-                        <h3><i class="fas fa-list"></i> File Details</h3>
+                        <h3><i class="fas fa-list"></i> <span data-i18n="listView">File Details</span></h3>
                         <div class="filter-box">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="list-filter" placeholder="Filter current list (Press Enter to prune tree)...">
+                            <input type="text" id="list-filter" data-i18n-placeholder="filterPlaceholder" placeholder="Filter current list (Press Enter to prune tree)...">
                         </div>
                     </div>
                     <div class="table-viewport">
                         <table class="table table-sm table-hover sticky-header">
                             <thead>
                                 <tr>
-                                    <th data-sort="name">Name <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort="type">Type <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort="size">Size <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort="depth">Depth <i class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort="name"><span data-i18n="name">Name</span> <i class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort="type"><span data-i18n="type">Type</span> <i class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort="size"><span data-i18n="size">Size</span> <i class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort="depth"><span data-i18n="depth">Depth</span> <i class="sort-icon fas fa-sort"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="file-table-body">
