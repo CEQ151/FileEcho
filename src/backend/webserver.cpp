@@ -5,8 +5,9 @@
 #endif
 
 
-#include "webserver.hpp"
-#include "utils.hpp"     // 使用新工具
+#include "FileEcho/webserver.hpp"
+#include "FileEcho/utils.hpp"     // 使用新工具
+#include "FileEcho/frontend_resources.hpp"
 #ifdef _WIN32
 #include <shellapi.h>
 #include <shobjidl.h>
@@ -40,7 +41,7 @@ bool WebServer::start(int port) {
     setup_routes();
     
     // 设置静态文件目录
-    server_->set_base_dir("./frontend");
+    // server_->set_base_dir("./frontend");
     server_->set_payload_max_length(100 * 1024 * 1024); // 100MB
     
     server_thread_ = make_unique<thread>([this]() {
@@ -63,8 +64,20 @@ void WebServer::stop() {
 }
 
 void WebServer::setup_routes() {
-    server_->Get("/", [this](const httplib::Request&, httplib::Response& res) {
-        handle_root(httplib::Request(), res); // Hack: 简单的重定向不依赖 req
+    server_->Get("/", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(reinterpret_cast<const char*>(index_html), index_html_len, "text/html");
+    });
+
+    server_->Get("/index.html", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(reinterpret_cast<const char*>(index_html), index_html_len, "text/html");
+    });
+
+    server_->Get("/script.js", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(reinterpret_cast<const char*>(script_js), script_js_len, "application/javascript");
+    });
+
+    server_->Get("/style.css", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(reinterpret_cast<const char*>(style_css), style_css_len, "text/css");
     });
     
     server_->Post("/api/scan", [this](const httplib::Request& req, httplib::Response& res) {
