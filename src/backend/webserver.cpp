@@ -195,7 +195,7 @@ void WebServer::handle_download(const httplib::Request& req, httplib::Response& 
 void WebServer::handle_api_info(const httplib::Request& req, httplib::Response& res) {
     json info = {
         {"name", "FileEcho"},
-        {"version", "1.0.4"},
+        {"version", "1.0.5"},
         {"status", running_ ? "running" : "stopped"},
         {"port", port_},
         {"endpoints", {

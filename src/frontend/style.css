@@ -100,11 +100,11 @@
 /* Theme: Deep Space */
 [data-theme="space"] {
     background-color: transparent !important;
-    --bg-primary: transparent;
+    --bg-primary: rgba(11, 14, 20, 0.8); /* 增加基础遮盖力，不再完全透明 */
     --bg-secondary: rgba(16, 20, 28, 0.4);
     --panel-bg: rgba(20, 25, 35, 0.7); /* 面板使用玻璃质感 */
     --text-main: #e2e8f0;
-    --text-muted: #94a3b8;
+    --text-muted: #b4c6ef; /* 提高 muted 文字亮度，使其更清晰 */
     --text-primary: #ffffff; 
     --text-secondary: #cbd5e1;
     --accent: #38bdf8;

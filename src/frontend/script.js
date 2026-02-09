@@ -859,92 +859,95 @@ class FileManagerApp {
     }
 
     updateFileTable(query = '') {
-        // Visual Feedback: Start processing
-        this.fileTableBody.style.opacity = '0.6';
+        try {
+            // Visual Feedback: Start processing
+            this.fileTableBody.style.opacity = '0.6';
 
-        // Update header UI
-        document.querySelectorAll('.sticky-header thead th[data-sort]').forEach(th => {
-            const key = th.getAttribute('data-sort');
-            const icon = th.querySelector('.sort-icon');
-            
-            if (key === this.sortCriteria.key) {
-                th.classList.add('active-sort');
-                icon.className = `sort-icon fas fa-sort-${this.sortCriteria.direction === 'asc' ? 'up' : 'down'}`;
-            } else {
-                th.classList.remove('active-sort');
-                icon.className = 'sort-icon fas fa-sort';
-            }
-        });
-
-        const lowerQuery = query.toLowerCase();
-        const filteredFiles = query 
-            ? this.currentFiles.filter(file => file.name.toLowerCase().includes(lowerQuery))
-            : this.currentFiles;
-
-        // Sync Search Statistics
-        const filteredSize = filteredFiles.reduce((sum, file) => sum + (file.size || 0), 0);
-        if (query) {
-            this.fileCountElement.textContent = this.t('foundFiles', { count: filteredFiles.length });
-            this.totalSizeElement.textContent = `(${this.formatFileSize(filteredSize)})`;
-        } else {
-            this.fileCountElement.textContent = filteredFiles.length;
-            this.totalSizeElement.textContent = this.formatFileSize(filteredSize);
-        }
-
-        if (this.currentFiles.length === 0) {
-            this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noFilesScanned')}</td></tr>`;
-            this.fileTableBody.style.opacity = '1';
-            return;
-        }
-
-        if (filteredFiles.length === 0 && query !== '') {
-            this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noMatchingFiles')}</td></tr>`;
-            this.fileTableBody.style.opacity = '1';
-            return;
-        }
-
-        // Build entire HTML string once to minimize reflows
-        let htmlString = '';
-        filteredFiles.forEach(file => {
-            const type = file.is_directory ? this.t('directory') : this.t('file');
-            const typeClass = file.is_directory ? 'directory' : 'file';
-            const size = this.formatFileSize(file.size || 0);
-            const icon = this.getFileIcon(file.name, file.is_directory);
-            
-            let displayName = file.name;
-            if (query) {
-                const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-                displayName = file.name.replace(regex, '<mark class="highlight">$1</mark>');
-            }
-
-            htmlString += `
-                <tr data-path="${file.path.replace(/"/g, '&quot;')}">
-                    <td>
-                        <div class="file-name-cell">
-                            <span class="file-icon">${icon}</span>
-                            <span class="name-text" title="${file.name}">${displayName}</span>
-                        </div>
-                    </td>
-                    <td><span class="type-badge ${typeClass}">${type}</span></td>
-                    <td>${size}</td>
-                    <td>${file.depth}</td>
-                </tr>
-            `;
-        });
-        
-        this.fileTableBody.innerHTML = htmlString;
-        this.fileTableBody.style.opacity = '1';
-
-        // Add event listeners
-        const rows = this.fileTableBody.querySelectorAll('tr');
-        rows.forEach(row => {
-            row.addEventListener('dblclick', () => {
-                const filePath = row.getAttribute('data-path');
-                this.openItem(filePath);
+            // Update header UI
+            document.querySelectorAll('.sticky-header thead th[data-sort]').forEach(th => {
+                const key = th.getAttribute('data-sort');
+                const icon = th.querySelector('.sort-icon');
+                
+                if (key === this.sortCriteria.key) {
+                    th.classList.add('active-sort');
+                    icon.className = `sort-icon fas fa-sort-${this.sortCriteria.direction === 'asc' ? 'up' : 'down'}`;
+                } else {
+                    th.classList.remove('active-sort');
+                    icon.className = 'sort-icon fas fa-sort';
+                }
             });
-            row.style.cursor = 'pointer';
-            row.title = this.t('doubleClickToOpen'); 
-        });
+
+            const lowerQuery = query.toLowerCase();
+            const filteredFiles = query 
+                ? this.currentFiles.filter(file => file.name.toLowerCase().includes(lowerQuery))
+                : this.currentFiles;
+
+            // Sync Search Statistics
+            const filteredSize = filteredFiles.reduce((sum, file) => sum + (file.size || 0), 0);
+            if (query) {
+                this.fileCountElement.textContent = this.t('foundFiles', { count: filteredFiles.length });
+                this.totalSizeElement.textContent = `(${this.formatFileSize(filteredSize)})`;
+            } else {
+                this.fileCountElement.textContent = filteredFiles.length;
+                this.totalSizeElement.textContent = this.formatFileSize(filteredSize);
+            }
+
+            if (this.currentFiles.length === 0) {
+                this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noFilesScanned')}</td></tr>`;
+                return;
+            }
+
+            if (filteredFiles.length === 0 && query !== '') {
+                this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noMatchingFiles')}</td></tr>`;
+                return;
+            }
+
+            // Build entire HTML string once to minimize reflows
+            let htmlString = '';
+            filteredFiles.forEach(file => {
+                const type = file.is_directory ? this.t('directory') : this.t('file');
+                const typeClass = file.is_directory ? 'directory' : 'file';
+                const size = this.formatFileSize(file.size || 0);
+                const icon = this.getFileIcon(file.name, file.is_directory);
+                
+                let displayName = file.name;
+                if (query) {
+                    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+                    displayName = file.name.replace(regex, '<mark class="highlight">$1</mark>');
+                }
+
+                htmlString += `
+                    <tr data-path="${file.path.replace(/"/g, '&quot;')}">
+                        <td>
+                            <div class="file-name-cell">
+                                <span class="file-icon">${icon}</span>
+                                <span class="name-text" title="${file.name}">${displayName}</span>
+                            </div>
+                        </td>
+                        <td><span class="type-badge ${typeClass}">${type}</span></td>
+                        <td>${size}</td>
+                        <td>${file.depth}</td>
+                    </tr>
+                `;
+            });
+            
+            this.fileTableBody.innerHTML = htmlString;
+
+            // Add event listeners
+            const rows = this.fileTableBody.querySelectorAll('tr');
+            rows.forEach(row => {
+                row.addEventListener('dblclick', () => {
+                    const filePath = row.getAttribute('data-path');
+                    this.openItem(filePath);
+                });
+                row.style.cursor = 'pointer';
+                row.title = this.t('doubleClickToOpen'); 
+            });
+        } catch (error) {
+            console.error('Error updating file table:', error);
+        } finally {
+            this.fileTableBody.style.opacity = '1';
+        }
     }
     
     formatFileSize(bytes) {
