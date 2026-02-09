@@ -1,5 +1,11 @@
 # FileEcho v1.0.5-stable
 
+[![Release](https://img.shields.io/github/v/release/CEQ151/FileEcho?display_name=tag&style=flat-square&color=blue)](https://github.com/CEQ151/FileEcho/releases)
+![License](https://img.shields.io/github/license/CEQ151/FileEcho?style=flat-square&color=green)
+![Repo Size](https://img.shields.io/github/repo-size/CEQ151/FileEcho?style=flat-square)
+![Stars](https://img.shields.io/github/stars/CEQ151/FileEcho?style=flat-square)
+![Forks](https://img.shields.io/github/forks/CEQ151/FileEcho?style=flat-square)
+
 **FileEcho** 是一款专为开发者和系统管理员设计的现代化、高性能本地文件扫描与管理工具。它结合了 C++17 的原生性能与 Web 技术的高效交互，在 v1.0.5 版本中实现了**全资源嵌入**，生成单一的可执行文件，无需安装，即开即用。
 
 ## ✨ 核心功能
