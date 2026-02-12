@@ -106,9 +106,8 @@ const aiT_ = {
         testSuccess: 'Connection successful!',
         testFailed: 'Connection failed: ',
         baseUrlHint: 'When using a third-party relay, check if /v1 is needed at the end of the URL',
-        exportChat: 'Export Chat',
-        exportAsTxt: 'Export as TXT',
-        exportAsMd: 'Export as Markdown',
+        exportChat: 'Copy Chat',
+        copiedChat: 'Chat history copied to clipboard!',
         tokenUsage: 'Tokens used this session',
     },
     zh: {
@@ -204,9 +203,8 @@ const aiT_ = {
         testSuccess: '连接成功！',
         testFailed: '连接失败：',
         baseUrlHint: '使用第三方中转站时，请注意 URL 末尾是否需要加 /v1',
-        exportChat: '导出记录',
-        exportAsTxt: '导出为 TXT',
-        exportAsMd: '导出为 Markdown',
+        exportChat: '复制记录',
+        copiedChat: '聊天记录已复制到剪贴板！',
         tokenUsage: '本次会话已使用 Tokens',
     }
 };
@@ -379,13 +377,7 @@ function createAiElements() {
         <div class="ai-drawer-header">
             <h3 class="ai-drawer-title"><i class="fas fa-robot"></i> ${aiT('drawerTitle')}</h3>
             <div class="ai-header-actions">
-                <div class="ai-export-wrapper">
-                    <button class="ai-icon-btn" id="ai-export-btn" title="${aiT('exportChat')}"><i class="fas fa-download"></i></button>
-                    <div class="ai-export-menu" id="ai-export-menu">
-                        <div class="ai-export-item" data-format="txt"><i class="fas fa-file-alt"></i> ${aiT('exportAsTxt')}</div>
-                        <div class="ai-export-item" data-format="md"><i class="fas fa-file-code"></i> ${aiT('exportAsMd')}</div>
-                    </div>
-                </div>
+                <button class="ai-icon-btn" id="ai-copy-chat-btn" title="${aiT('exportChat')}"><i class="fas fa-copy"></i></button>
                 <button class="ai-icon-btn" id="ai-new-chat-btn" title="${aiT('newChat')}"><i class="fas fa-plus"></i></button>
                 <button class="ai-icon-btn" id="ai-settings-btn" title="${aiT('settings')}"><i class="fas fa-cog"></i></button>
                 <button class="ai-icon-btn ai-drawer-close" title="${aiT('close')}"><i class="fas fa-times"></i></button>
@@ -646,27 +638,19 @@ function bindEvents() {
             elements.aiChatHistory.innerHTML = `<div class="ai-message ai">${aiT('welcomeMsg')}</div>`;
             state.smartSearchMode = false;
             state.fileSummaryMode = false;
+            // Reset token counter
+            state.sessionTokens = { prompt: 0, completion: 0, total: 0 };
+            const tokenBar = document.getElementById('ai-token-bar');
+            if (tokenBar) tokenBar.style.display = 'none';
+            const tokenText = document.getElementById('ai-token-text');
+            if (tokenText) tokenText.textContent = 'Tokens: 0';
             addMessageToChat('ai', aiT('newChatConfirm'));
         });
     }
-    // Export chat button
-    const exportBtn = elements.aiDrawer.querySelector('#ai-export-btn');
-    const exportMenu = elements.aiDrawer.querySelector('#ai-export-menu');
-    if (exportBtn && exportMenu) {
-        exportBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            exportMenu.classList.toggle('visible');
-        });
-        exportMenu.querySelectorAll('.ai-export-item').forEach(item => {
-            item.addEventListener('click', () => {
-                const format = item.getAttribute('data-format');
-                exportChatHistory(format);
-                exportMenu.classList.remove('visible');
-            });
-        });
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.ai-export-wrapper')) exportMenu.classList.remove('visible');
-        });
+    // Copy chat button
+    const copyChatBtn = elements.aiDrawer.querySelector('#ai-copy-chat-btn');
+    if (copyChatBtn) {
+        copyChatBtn.addEventListener('click', () => copyChatToClipboard());
     }
     if (elements.toggleKeyVisBtn) {
         elements.toggleKeyVisBtn.addEventListener('click', () => {
@@ -960,7 +944,20 @@ async function handleAiCommand(command) {
 // Annotate Tree (AI-generated file comments)
 // ==========================================
 async function handleAnnotateTree(ctx) {
-    const fileTree = buildFileTree(ctx.files, ctx.path);
+    // Use the fileManager's tree generator to produce proper ASCII tree with ├── └── │ symbols
+    const fm = window.fileManager;
+    if (!fm || fm.currentFiles.length === 0) {
+        addMessageToChat('ai', 'Error: no files loaded');
+        return;
+    }
+    // generateTreeContent(false) returns plain text tree (not HTML)
+    // Temporarily disable size display to get a clean tree
+    const sizeCheckbox = fm.showSizeCheckbox;
+    const origSizeState = sizeCheckbox ? sizeCheckbox.checked : false;
+    if (sizeCheckbox) sizeCheckbox.checked = false;
+    const fileTree = fm.generateTreeContent(false);
+    if (sizeCheckbox) sizeCheckbox.checked = origSizeState;
+
     const payload = { path: ctx.path, language: getCurrentLang(), file_tree: fileTree };
 
     addMessageToChat('user', '🏷️ ' + aiT('analyzing') + aiT('annotateTree') + '...');
@@ -976,81 +973,18 @@ async function handleAnnotateTree(ctx) {
         if (!d.success) { addMessageToChat('ai', 'Error: ' + (d.error || d.message)); return; }
         updateTokenDisplay(d);
 
-        // Parse AI response: each line is "filename|||comment"
-        const annotations = {};
-        (d.content || '').split('\n').forEach(line => {
-            const sep = line.indexOf('|||');
-            if (sep > 0) {
-                const name = line.substring(0, sep).trim();
-                const comment = line.substring(sep + 3).trim();
-                if (name && comment) annotations[name] = comment;
-            }
-        });
+        // AI now returns the complete annotated tree with # comments directly
+        let content = (d.content || '').trim();
+        // Strip markdown code block markers if AI included them
+        content = content.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/,  '');
+        content = content.trim();
 
-        // Build annotated tree using the frontend tree generator
-        const fm = window.fileManager;
-        if (!fm || fm.currentFiles.length === 0) return;
-
-        const files = fm.currentFiles;
-        // Sort in hierarchical pre-order (same as generateTreeContent)
-        const sorted = [...files].sort((a, b) => {
-            const partsA = a.path.split(/[/\\]/).filter(Boolean);
-            const partsB = b.path.split(/[/\\]/).filter(Boolean);
-            const len = Math.min(partsA.length, partsB.length);
-            for (let i = 0; i < len; i++) {
-                if (partsA[i] !== partsB[i]) {
-                    const isDirA = (i < partsA.length - 1) || a.is_directory;
-                    const isDirB = (i < partsB.length - 1) || b.is_directory;
-                    if (isDirA !== isDirB) return isDirA ? -1 : 1;
-                    return partsA[i].localeCompare(partsB[i], undefined, { numeric: true });
-                }
-            }
-            return partsA.length - partsB.length;
-        });
-
-        // Generate tree lines with annotations, then align comments
-        const isLastAtDepth = [];
-        let rootName = fm.currentPath.split(/[/\\]/).filter(Boolean).pop() || 'root';
-        rootName += '/';
-
-        const lines = [];
-        // Root line
-        const rootComment = annotations[rootName] || annotations[rootName.replace(/\/$/, '')] || '';
-        lines.push({ text: rootName, comment: rootComment });
-
-        for (let i = 0; i < sorted.length; i++) {
-            const file = sorted[i];
-            const isLast = (i === sorted.length - 1) || (sorted[i + 1].depth < file.depth);
-            isLastAtDepth[file.depth] = isLast;
-
-            let prefix = '';
-            for (let d = 1; d < file.depth; d++) {
-                prefix += isLastAtDepth[d] ? '    ' : '│   ';
-            }
-            prefix += isLast ? '└── ' : '├── ';
-
-            const fileName = file.name + (file.is_directory ? '/' : '');
-            const comment = annotations[file.name] || annotations[fileName] || '';
-            lines.push({ text: prefix + fileName, comment: comment });
+        if (!content) {
+            addMessageToChat('ai', 'Error: empty response');
+            return;
         }
 
-        // Calculate alignment column: max text width + 2 spaces padding
-        const maxLen = lines.reduce((m, l) => Math.max(m, l.text.length), 0);
-        const alignCol = maxLen + 2;
-
-        // Build final output with aligned # comments
-        let output = '```\n';
-        for (const l of lines) {
-            if (l.comment) {
-                const padding = ' '.repeat(Math.max(2, alignCol - l.text.length));
-                output += l.text + padding + '# ' + l.comment + '\n';
-            } else {
-                output += l.text + '\n';
-            }
-        }
-        output += '```';
-
-        addMessageToChat('ai', output);
+        addMessageToChat('ai', '```\n' + content + '\n```');
 
     } catch (e) {
         removeTypingIndicator();
@@ -1164,38 +1098,26 @@ function updateTokenDisplay(responseData) {
     }
 }
 
-function exportChatHistory(format) {
+async function copyChatToClipboard() {
     const messages = elements.aiChatHistory.querySelectorAll('.ai-message');
     if (messages.length === 0) return;
     const lines = [];
     const now = new Date();
-    const ts = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') +
-        '_' + String(now.getHours()).padStart(2,'0') + String(now.getMinutes()).padStart(2,'0') + String(now.getSeconds()).padStart(2,'0');
-
-    if (format === 'md') {
-        lines.push('# FileEcho AI Chat Export', '', `*${now.toLocaleString()}*`, '---', '');
-        messages.forEach(msg => {
-            const isUser = msg.classList.contains('user');
-            const text = msg.getAttribute('data-raw') || msg.textContent.trim();
-            if (isUser) { lines.push('> **User:** ' + text, ''); }
-            else { lines.push('**AI:**', '', text, '', '---', ''); }
-        });
-    } else {
-        lines.push('FileEcho AI Chat Export - ' + now.toLocaleString(), '='.repeat(50), '');
-        messages.forEach(msg => {
-            const isUser = msg.classList.contains('user');
-            const text = msg.getAttribute('data-raw') || msg.textContent.trim();
-            if (isUser) { lines.push('[User]: ' + text, ''); }
-            else { lines.push('[AI]:', text, '', '-'.repeat(40), ''); }
-        });
+    lines.push('# FileEcho AI Chat Export', '', `*${now.toLocaleString()}*`, '---', '');
+    messages.forEach(msg => {
+        const isUser = msg.classList.contains('user');
+        const text = msg.getAttribute('data-raw') || msg.textContent.trim();
+        if (isUser) { lines.push('> **User:** ' + text, ''); }
+        else { lines.push('**AI:**', '', text, '', '---', ''); }
+    });
+    try {
+        await navigator.clipboard.writeText(lines.join('\n'));
+        if (window.fileManager && window.fileManager.showToast) {
+            window.fileManager.showToast(aiT('copiedChat'), 'success');
+        }
+    } catch (e) {
+        console.error('Copy failed:', e);
     }
-
-    const blob = new Blob([lines.join('\n')], { type: format === 'md' ? 'text/markdown' : 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `FileEcho_Chat_${ts}.${format}`;
-    a.click();
-    URL.revokeObjectURL(a.href);
 }
 
 function addMessageToChat(role, text) {

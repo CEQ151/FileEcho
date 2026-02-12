@@ -45,8 +45,8 @@
 - **API relay/proxy support** — Custom Base URL with auto-format detection
 - **Markdown rendering** — h1-h6 headings, code blocks, tables, links, lists, blockquotes
 - **LaTeX math** — KaTeX-based, supports inline `$...$` and block `$$...$$`
-- **Token usage tracking** — Real-time prompt / completion / total token display
-- **Chat export** — Export as `.txt` or `.md`
+- **Token usage tracking** — Real-time prompt / completion / total token display, resets on new chat
+- **Chat copy** — One-click copy chat history to clipboard (Markdown format)
 - **Smart hover summaries** — Hover over files/folders for AI-generated summary cards
 - **Context-aware** — Auto-detects filenames in messages and reads their content
 - **Multi-function panel** — Project summary / code analysis / cleanup suggestions / smart search / annotate tree

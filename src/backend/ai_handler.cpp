@@ -438,29 +438,39 @@ AIResponse AIHandler::GenerateTreeAnnotations(const std::string& projectPath, co
 
     std::string prompt;
     if (language == "zh") {
-        prompt = "你是一个代码分析AI。我将提供一个项目的文件树，请为每个文件和文件夹写一个简短的中文注释（不超过15个字）。\n\n"
+        prompt = "你是一个代码/项目分析AI。下面是一个项目的文件目录树。\n"
+                 "请你在每一行的文件名或文件夹名后面，追加一个简短的中文注释（不超过15个字），格式为 `# 注释内容`。\n\n"
                  "项目路径：" + projectPath + "\n\n"
-                 "文件树：\n" + fileTree + "\n\n"
-                 "**输出格式要求（严格遵守）：**\n"
-                 "- 每行格式为：`文件名|||注释`\n"
-                 "- 例如：`main.cpp|||程序入口`\n"
-                 "- 例如：`src/|||源代码目录`\n"
-                 "- 不要输出任何其他内容，不要有标题、解释或Markdown格式\n"
-                 "- 每个文件名（含目录名）只出现一次\n"
-                 "- 目录名不要带斜杠\n"
-                 "- 根据文件名和项目上下文推断用途，注释务必精炼";
+                 "文件树：\n```\n" + fileTree + "```\n\n"
+                 "**输出要求（严格遵守）：**\n"
+                 "1. 保持原始树结构和缩进完全不变（包括 ├── └── │ 等树形符号）\n"
+                 "2. 在每行末尾追加 `  # 简短注释`（两个空格 + # + 空格 + 注释）\n"
+                 "3. 只输出带注释的完整文件树，不要有任何其他文字、标题或Markdown代码块标记\n"
+                 "4. 每一行都必须有注释\n\n"
+                 "示例（注意对齐）：\n"
+                 "myproject/                # 项目根目录\n"
+                 "├── src/                  # 源代码目录\n"
+                 "│   ├── main.cpp          # 程序入口\n"
+                 "│   └── utils.hpp         # 工具函数\n"
+                 "├── CMakeLists.txt        # CMake构建配置\n"
+                 "└── README.md             # 项目说明文档\n";
     } else {
-        prompt = "You are a code analysis AI. I will provide a project file tree. Write a brief English annotation (max 10 words) for each file and folder.\n\n"
+        prompt = "You are a code/project analysis AI. Below is a project file directory tree.\n"
+                 "Add a brief English annotation (max 10 words) after each file/folder name, in the format `# annotation`.\n\n"
                  "Project Path: " + projectPath + "\n\n"
-                 "File Tree:\n" + fileTree + "\n\n"
-                 "**Output format (strictly follow):**\n"
-                 "- Each line: `filename|||annotation`\n"
-                 "- Example: `main.cpp|||Application entry point`\n"
-                 "- Example: `src/|||Source code directory`\n"
-                 "- Do NOT output anything else — no titles, explanations, or Markdown\n"
-                 "- Each filename (including directory name) appears exactly once\n"
-                 "- Directory names without trailing slash\n"
-                 "- Infer purpose from filename and project context, keep annotations concise";
+                 "File Tree:\n```\n" + fileTree + "```\n\n"
+                 "**Output requirements (strictly follow):**\n"
+                 "1. Keep the original tree structure and indentation exactly unchanged (including ├── └── │ tree symbols)\n"
+                 "2. Append `  # brief annotation` at the end of each line (two spaces + # + space + annotation)\n"
+                 "3. Output ONLY the annotated file tree — no other text, titles, or Markdown code block markers\n"
+                 "4. Every single line must have an annotation\n\n"
+                 "Example (note alignment):\n"
+                 "myproject/                # Project root directory\n"
+                 "├── src/                  # Source code directory\n"
+                 "│   ├── main.cpp          # Application entry point\n"
+                 "│   └── utils.hpp         # Utility functions\n"
+                 "├── CMakeLists.txt        # CMake build configuration\n"
+                 "└── README.md             # Project documentation\n";
     }
     return GenerateChatResponse(prompt, {}, language);
 }
