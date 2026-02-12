@@ -1,71 +1,169 @@
-# FileEcho v1.0.5-stable
+# FileEcho v1.1.1-AI Embedded
 
 <p align="left">
   <a href="https://github.com/CEQ151/FileEcho/releases"><img src="https://img.shields.io/github/v/release/CEQ151/FileEcho?display_name=tag&style=flat-square&color=blue" alt="Release"></a>
   <img src="https://img.shields.io/github/license/CEQ151/FileEcho?style=flat-square&color=green" alt="License">
-  <img src="https://img.shields.io/github/repo-size/CEQ151/FileEcho?style=flat-square" alt="Repo Size">
-  <img src="https://img.shields.io/github/stars/CEQ151/FileEcho?style=flat-square" alt="Stars">
-  <img src="https://img.shields.io/github/forks/CEQ151/FileEcho?style=flat-square" alt="Forks">
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/C%2B%2B-17-00599c?style=flat-square&logo=cplusplus" alt="C++17">
+  <img src="https://img.shields.io/badge/AI-7%20Providers-ff6b6b?style=flat-square" alt="AI Providers">
 </p>
 
 [English] | [简体中文](README.md)
 
-**FileEcho** is a modern, high-performance local file scanning and management tool designed for developers and system administrators. It combines the native performance of C++17 with efficient Web technology interactions. In version v1.0.5, it achieves **full resource embedding**, generating a single executable file that requires no installation and works out of the box.
+**FileEcho** is a modern, high-performance local file scanning and AI analysis tool designed for developers and system administrators. It combines C++17 native performance with web-based UI interaction, embedding a complete file management system and multi-model AI assistant in a single executable.
 
-<img width="2559" height="1475" alt="6" src="https://github.com/user-attachments/assets/d278109e-1dc5-4311-87b4-c4d03d6a28fb" />
+> No Python/Node.js runtime needed — just double-click `FileEcho.exe` to use all features.
 
+---
 
+## ✨ Features
 
-## ✨ Core Features
+### 📁 File Scanning & Management
+- **Ultra-fast recursive scanning** — Built on C++17 `std::filesystem`, millisecond-level traversal
+- **Smart file tree** — Path-pruning search, interactive collapse/expand, keyword highlighting
+- **Multi-sort** — Sort by Name / Size / Depth, folders always on top
+- **Real-time filtering** — Instant filter-as-you-type, press Enter to prune tree
+- **Double-click to open** — Open files directly with system default application
+- **File tree export** — One-click copy or download ASCII file tree
+- **File selection** — Checkbox to select file subsets for targeted AI analysis
+- **PDF / Office reading** — Auto-extract text from PDF, DOCX, XLSX, PPTX
 
-### 1. High-speed Scanning & Multi-dimensional Sorting
-* **Single File Execution**: All frontend resources (HTML/CSS/JS) are embedded in the binary. No need to carry the `frontend` folder.
-* **Deep Scan**: Utilizes C++17 `std::filesystem` for recursive scanning of local directories.
-* **Folder First**: Folders always stay above files regardless of sorting rules, matching native system behavior.
-* **Header Click Sorting**: Supports sorting by **Name** (natural sort), **Size**, **Type**, and **Depth**.
+### 🤖 Built-in AI Assistant
+- **7 AI providers, 30+ models** out of the box:
 
-### 2. Intelligent File Tree
-* **Pruning Search**: Enter a path in the search box to enter "Pruning Mode", showing only matches and their full parent paths.
-* **Interactive Folding**: `[+]`/`[-]` controls for each folder, supporting partial expansion and collapse like mind maps.
-* **Highlighting**: Search results are visually highlighted using `<mark>` tags in the tree.
+  | Provider | Example Models |
+  |----------|---------------|
+  | OpenAI | GPT-4.1, GPT-5, GPT-5.2 Pro |
+  | DeepSeek | DeepSeek Chat (V3), Reasoner (R1) |
+  | Google Gemini | Gemini 2.5 Flash/Pro, 3.0 Preview |
+  | xAI Grok | Grok 4 / 4.1 Fast (Reasoning) |
+  | Anthropic Claude | Haiku 4.5, Sonnet 4.5, Opus 4.6 |
+  | Kimi (Moonshot) | Kimi K2 Turbo, K2.5 |
+  | GLM (Zhipu AI) | GLM-4.5 AirX ~ GLM-5 |
+  | Custom | Any OpenAI-compatible API |
 
-### 3. Real-time Search & Statistics
-* **Everything-level Filtering**: The right-side file list supports real-time fuzzy search with zero latency.
-* **Status Sync**: Sidebar real-time updates for total file count and total size in the current view.
+- **API relay/proxy support** — Custom Base URL with auto-format detection
+- **Markdown rendering** — h1-h6 headings, code blocks, tables, links, lists, blockquotes
+- **LaTeX math** — KaTeX-based, supports inline `$...$` and block `$$...$$`
+- **Token usage tracking** — Real-time prompt / completion / total token display
+- **Chat export** — Export as `.txt` or `.md`
+- **Smart hover summaries** — Hover over files/folders for AI-generated summary cards
+- **Context-aware** — Auto-detects filenames in messages and reads their content
+- **Multi-function panel** — Project summary / code analysis / cleanup suggestions / smart search
+- **Temperature control** — Precise / Balanced / Creative presets + slider fine-tuning
 
-### 4. Professional Export & Interaction
-* **WYSIWYG Export**: Generated `.txt` tree maps strictly follow your current **folding** and **search/filter** states.
-* **Double-click to Open**: Double-click any file or folder to open it with the system's default program.
+### 🎨 Customization
+- **6 themes** — Light / Obsidian / Sublime Monokai / Windows Dark / Dracula / Deep Space
+- **Bilingual UI** — Chinese / English one-click switch
+- **Resizable AI panel** — Drag left edge to adjust width
 
-## 🛠️ Tech Stack
-
-* **Backend**: C++17, `cpp-httplib` (lightweight server), `webview` (cross-platform native shell).
-* **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3 (Flexbox/Grid).
-* **UI Components**: FontAwesome 6, Bootstrap 5 (partial styles).
+---
 
 ## 🚀 Quick Start
 
-1. **Requirements**: 
-   * Windows 10/11 (x64)
-   * C++17 compliant compiler (GCC/MinGW, MSVC 2019+)
-   * **Python 3.x** (for automatic resource header generation during build)
-   * CMake 3.15+
+### Option 1: Download Installer (Recommended)
 
-2. **Build**:
+Download `FileEcho-v1.1.1-Setup.exe` from [Releases](https://github.com/CEQ151/FileEcho/releases) and run it.
+
+### Option 2: Portable Version
+
+Download `FileEcho-v1.1.1-portable.zip` from Releases, extract, and run `FileEcho.exe`.
+
+### Option 3: Build from Source
+
+#### Prerequisites
+
+| Dependency | Version | Notes |
+|-----------|---------|-------|
+| Windows | 10 / 11 (x64) | WebView2 Runtime required (built-in on Win11) |
+| MinGW-w64 (GCC) | 13.0+ | 15.x recommended, C++17 support required |
+| CMake | 3.15+ | Build system |
+| Python | 3.6+ | For `pack_assets.py` resource packing script |
+| NSIS | 3.x | Optional, for generating installer |
+
+#### Build Steps
+
 ```bash
-# Generate build config (automatically calls Python script to pack resources)
-cmake -B build -G "Ninja" 
+# 1. Clone the repository
+git clone https://github.com/CEQ151/FileEcho.git
+cd FileEcho
 
-# Compile Release version
+# 2. Pack frontend resources into C++ headers
+python pack_assets.py
+
+# 3. Configure CMake
+cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+# 4. Build
 cmake --build build --config Release
+
+# 5. Run
+build\FileEcho.exe
 ```
 
-3. **Run**: 
-   Launch `build/FileEcho.exe` directly. The file is portable and can be moved anywhere.
+> ✅ **Static linking** is enabled — the output is a single `FileEcho.exe` with no external DLL dependencies.
+>
+> Or use `build_release.bat` to automate everything.
 
-## 📅 Changelog (v1.0.4 —> v1.0.5-stable)
+#### One-Click Build + Package
 
-* **[Major]** Implemented static embedding of frontend resources; `.exe` no longer depends on external folders.
-* **[Architecture]** Reorganized project structure, moved 3rd-party dependencies to `include/external`.
-* **[Features]** Added language switching (CN/EN) and multi-theme support.
-* **[UX]** Added folder selection and upload functionality.
+```bash
+# Build and collect to dist/
+build_release.bat
+
+# Generate installer (requires NSIS in PATH)
+makensis installer.nsi
+```
+
+---
+
+## 🏗️ Project Structure
+
+```
+FileEcho/
+├── CMakeLists.txt              # CMake build configuration
+├── pack_assets.py              # Frontend → C++ header packing script
+├── build_release.bat           # Windows one-click build script
+├── installer.nsi               # NSIS installer script
+├── include/
+│   ├── external/               # Third-party header-only libraries
+│   └── FileEcho/               # Project headers
+├── src/
+│   ├── backend/
+│   │   ├── main.cpp            # Entry point (WebView2 + HTTP server)
+│   │   ├── webserver.cpp       # HTTP routes + static resource serving
+│   │   ├── ai_handler.cpp      # Multi-model AI calls (WinHTTP, TLS 1.2)
+│   │   └── filesystem.cpp      # Recursive scan + file tree generation
+│   └── frontend/
+│       ├── index.html          # Main page (Bootstrap 5 + KaTeX)
+│       ├── script.js           # File manager core logic
+│       ├── style.css           # Main styles (6 theme CSS variables)
+│       ├── ai_addon.js         # AI assistant (chat / settings / Markdown / LaTeX)
+│       └── ai_addon.css        # AI assistant styles (theme-adaptive)
+└── resources/
+    ├── FileEcho.rc             # Windows resource (icon + version info)
+    └── logo.ico                # Application icon
+```
+
+---
+
+## 🔧 Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Backend | C++17, `std::filesystem` |
+| HTTP Server | [cpp-httplib](https://github.com/yhirose/cpp-httplib) (header-only) |
+| JSON | [nlohmann/json](https://github.com/nlohmann/json) (header-only) |
+| GUI Shell | [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
+| AI Networking | WinHTTP (TLS 1.2, system proxy) |
+| Frontend | Vanilla JS (ES6+), HTML5, CSS3 |
+| UI Framework | Bootstrap 5, FontAwesome 6 |
+| Math Rendering | [KaTeX](https://katex.org/) 0.16.11 (CDN) |
+| Build System | CMake 3.15+, MinGW-w64 |
+| Installer | NSIS 3 |
+
+---
+
+## 📜 License
+
+[MIT License](LICENSE) © 2026 CEQ151

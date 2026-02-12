@@ -1,1 +1,37 @@
+#include <winver.h>
+
+/* --- Icon --- */
 1 ICON DISCARDABLE "logo.ico"
+
+/* --- UAC Manifest --- */
+1 24 "FileEcho.manifest"
+
+/* --- Version Information --- */
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     1,1,1,0
+PRODUCTVERSION  1,1,1,0
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEFLAGS       0x0L
+FILEOS          VOS_NT_WINDOWS32
+FILETYPE        VFT_APP
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      "CEQ151"
+            VALUE "FileDescription",  "FileEcho - File Scanner & AI Assistant"
+            VALUE "FileVersion",      "1.1.1.0"
+            VALUE "InternalName",     "FileEcho"
+            VALUE "LegalCopyright",   "Copyright (C) 2026 CEQ151. MIT License."
+            VALUE "OriginalFilename", "FileEcho.exe"
+            VALUE "ProductName",      "FileEcho"
+            VALUE "ProductVersion",   "1.1.1.0"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 0x04B0
+    END
+END

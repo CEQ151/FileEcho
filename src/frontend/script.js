@@ -829,7 +829,7 @@ class FileManagerApp {
         this.totalSize = 0;
         
         this.treeOutput.innerHTML = ''; // Clear DOM (Tree)
-        this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noFilesScanned')}</td></tr>`; // Clear DOM (Table)
+        this.fileTableBody.innerHTML = `<tr><td colspan="3" class="empty-message">${this.t('noFilesScanned')}</td></tr>`; // Clear DOM (Table)
         
         // Update Status UI
         this.currentPathElement.textContent = this.t('noPathSelected');
@@ -893,20 +893,18 @@ class FileManagerApp {
             }
 
             if (this.currentFiles.length === 0) {
-                this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noFilesScanned')}</td></tr>`;
+                this.fileTableBody.innerHTML = `<tr><td colspan="3" class="empty-message">${this.t('noFilesScanned')}</td></tr>`;
                 return;
             }
 
             if (filteredFiles.length === 0 && query !== '') {
-                this.fileTableBody.innerHTML = `<tr><td colspan="4" class="empty-message">${this.t('noMatchingFiles')}</td></tr>`;
+                this.fileTableBody.innerHTML = `<tr><td colspan="3" class="empty-message">${this.t('noMatchingFiles')}</td></tr>`;
                 return;
             }
 
             // Build entire HTML string once to minimize reflows
             let htmlString = '';
             filteredFiles.forEach(file => {
-                const type = file.is_directory ? this.t('directory') : this.t('file');
-                const typeClass = file.is_directory ? 'directory' : 'file';
                 const size = this.formatFileSize(file.size || 0);
                 const icon = this.getFileIcon(file.name, file.is_directory);
                 
@@ -919,14 +917,13 @@ class FileManagerApp {
                 htmlString += `
                     <tr data-path="${file.path.replace(/"/g, '&quot;')}">
                         <td>
-                            <div class="file-name-cell">
+                            <div class="file-name-cell" style="padding-left:${file.depth * 12}px">
                                 <span class="file-icon">${icon}</span>
                                 <span class="name-text" title="${file.name}">${displayName}</span>
                             </div>
                         </td>
-                        <td><span class="type-badge ${typeClass}">${type}</span></td>
-                        <td>${size}</td>
-                        <td>${file.depth}</td>
+                        <td class="col-size">${size}</td>
+                        <td class="col-depth">${file.depth}</td>
                     </tr>
                 `;
             });
@@ -1161,7 +1158,8 @@ class FileManagerApp {
 
 // Initialize the app when the page loads
 window.addEventListener('DOMContentLoaded', () => {
-    new FileManagerApp();
+    // Expose instance globally for addons
+    window.fileManager = new FileManagerApp();
 });
 
 // Add some CSS for the file table

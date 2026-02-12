@@ -1,73 +1,201 @@
-# FileEcho v1.0.5-stable
+# FileEcho v1.1.1-AI Embedded
 
 <p align="left">
   <a href="https://github.com/CEQ151/FileEcho/releases"><img src="https://img.shields.io/github/v/release/CEQ151/FileEcho?display_name=tag&style=flat-square&color=blue" alt="Release"></a>
   <img src="https://img.shields.io/github/license/CEQ151/FileEcho?style=flat-square&color=green" alt="License">
-  <img src="https://img.shields.io/github/repo-size/CEQ151/FileEcho?style=flat-square" alt="Repo Size">
-  <img src="https://img.shields.io/github/stars/CEQ151/FileEcho?style=flat-square" alt="Stars">
-  <img src="https://img.shields.io/github/forks/CEQ151/FileEcho?style=flat-square" alt="Forks">
+  <img src="https://img.shields.io/badge/platform-Windows%2010%2F11-0078d4?style=flat-square" alt="Platform">
+  <img src="https://img.shields.io/badge/C%2B%2B-17-00599c?style=flat-square&logo=cplusplus" alt="C++17">
+  <img src="https://img.shields.io/badge/AI-7%20Providers-ff6b6b?style=flat-square" alt="AI Providers">
 </p>
 
 [简体中文] | [English](README.en.md)
 
-**FileEcho** 是一款专为开发者和系统管理员设计的现代化、高性能本地文件扫描与管理工具。它结合了 C++17 的原生性能与 Web 技术的高效交互，在 v1.0.5 版本中实现了**全资源嵌入**，生成单一的可执行文件，无需安装，即开即用。
+**FileEcho** 是一款面向开发者和系统管理员的**现代化本地文件扫描与 AI 分析工具**。它将 C++17 原生性能与 Web 前端交互相结合，在单一可执行文件中嵌入了完整的文件管理系统和多模型 AI 助手。
 
-<img width="2559" height="1475" alt="6" src="https://github.com/user-attachments/assets/05f37174-991e-4e79-ab90-72b67451b13d" />
+> 无需安装 Python/Node.js 运行时，双击 `FileEcho.exe` 即可使用全部功能。
 
+---
 
-## ✨ 核心功能
+## ✨ 功能亮点
 
-### 1. 极速扫描与多维排序
-* **单文件运行**：所有前端资源（HTML/CSS/JS）已嵌入二进制文件，无需携带 `frontend` 文件夹。
-* **深度扫描**：利用 C++17 `std::filesystem` 递归扫描本地目录。
-* **文件夹置顶 (Folder First)**：无论应用何种排序规则，文件夹始终排在同级文件的上方，符合原生系统使用习惯。
-* **表头点击排序**：支持点击 **Name** (自然语言数字排序)、**Size** (原始字节比较)、**Type** 及 **Depth** 进行升降序排列。
+### 📁 文件扫描与管理
+- **极速递归扫描** — 基于 C++17 `std::filesystem`，毫秒级遍历大型目录
+- **智能文件树** — 路径剪枝搜索、交互式折叠、关键词高亮
+- **多维排序** — Name / Size / Depth 三维排序，文件夹始终置顶
+- **实时筛选** — 输入即过滤，支持 Enter 回车剪枝文件树
+- **双击打开** — 表格行双击直接调用系统程序打开文件
+- **文件树导出** — 一键复制或下载 ASCII 文件树文本
+- **文件勾选** — 可勾选文件子集，仅对选中文件进行 AI 分析
+- **PDF / Office 读取** — 自动提取 PDF、DOCX、XLSX、PPTX 文本内容
 
-### 2. 智能文件树 (File Tree)
+### 🤖 AI 智能助手（内嵌）
+- **7 大 AI 提供商，30+ 模型** — 开箱即用：
 
-* **路径剪枝搜索**：在搜索框输入并回车，文件树将进入“剪枝模式”，仅显示匹配项及其完整的父级路径，保持上下文层级感。
-* **交互式折叠**：每个文件夹前设有 `[+]`/`[-]` 控制符，支持类似思维导图的局部展开与收起。
-* **高亮显示**：搜索结果在树状图中通过 `<mark>` 标签进行视觉高亮处理。
+  | 提供商 | 模型示例 |
+  |--------|----------|
+  | OpenAI | GPT-4.1, GPT-5, GPT-5.2 Pro |
+  | DeepSeek | DeepSeek Chat (V3), Reasoner (R1) |
+  | Google Gemini | Gemini 2.5 Flash/Pro, 3.0 Preview |
+  | xAI Grok | Grok 4 / 4.1 Fast (Reasoning) |
+  | Anthropic Claude | Haiku 4.5, Sonnet 4.5, Opus 4.6 |
+  | Kimi (月之暗面) | Kimi K2 Turbo, K2.5 |
+  | GLM (智谱) | GLM-4.5 AirX ~ GLM-5 |
+  | 自定义 | 任意 OpenAI 兼容 API |
 
-### 3. 实时搜索与统计
+- **API 中转/代理支持** — 自定义 Base URL，自动检测并转换请求格式
+- **Markdown 渲染** — h1-h6 标题、代码块、表格、链接、列表、引用
+- **LaTeX 数学公式** — 基于 KaTeX，支持行内 `$...$` 和块级 `$$...$$`
+- **Token 用量统计** — 实时显示每次对话 prompt / completion / total tokens
+- **聊天导出** — 支持导出为 `.txt` 或 `.md` 格式
+- **智能悬浮摘要** — 鼠标悬停文件/文件夹，AI 自动生成摘要卡片
+- **上下文感知** — 自动识别消息中的文件名并读取内容发送给 AI
+- **多功能面板** — 项目总结 / 代码分析 / 清理建议 / 智能搜索
+- **温度调节** — 精准/平衡/创意预设 + 滑块微调
 
-* **Everything 级过滤**：右侧文件列表支持实时模糊搜索，输入即过滤，体感无延迟。
-* **状态同步**：侧边栏实时同步当前视图下的文件总数与总体积（例如：“Found 5 items (2.5 MB)”）。
+### 🎨 个性化
+- **6 套主题** — Light / Obsidian / Sublime Monokai / Windows Dark / Dracula / Deep Space
+- **双语 UI** — 中文 / English 一键切换
+- **AI 面板可拖拽** — 左边缘拖拽调整宽度
 
-### 4. 专业级导出与交互
+---
 
-* **所见即所得 (WYSIWYG) 导出**：点击“下载”或“复制”，生成的 `.txt` 树状图将严格遵循您当前的**折叠状态**与**搜索过滤状态**。
-* **双击打开**：在列表中双击任何文件或文件夹，将调用 Windows 系统原生关联程序将其打开。
+## 📸 截图
 
-## 🛠️ 技术栈
+<!-- 请替换为实际截图 URL -->
+> 截图占位：主界面 / AI 聊天 / 多主题切换 / LaTeX 渲染
 
-* **后端**: C++17, `cpp-httplib` (轻量级服务器), `webview` (跨平台原生壳)。
-* **前端**: 原生 JavaScript (ES6+), HTML5, CSS3 (Flexbox/Grid 布局)。
-* **UI 组件**: FontAwesome 6, Bootstrap 5 (部分辅助样式)。
+---
 
 ## 🚀 快速开始
 
-1. **环境要求**: 
-   * Windows 10/11 (x64)
-   * 支持 C++17 的编译器 (GCC/MinGW, MSVC 2019+)
-   * **Python 3.x** (用于构建时自动生成资源头文件)
-   * CMake 3.15+
+### 方式一：下载安装包（推荐）
 
-2. **构建项目**:
+从 [Releases](https://github.com/CEQ151/FileEcho/releases) 下载 `FileEcho-v1.1.1-Setup.exe`，双击安装即可。
+
+### 方式二：下载便携版
+
+从 Releases 下载 `FileEcho-v1.1.1-portable.zip`，解压后运行 `FileEcho.exe`。
+
+### 方式三：从源码编译
+
+#### 环境要求
+
+| 依赖 | 版本 | 说明 |
+|------|------|------|
+| Windows | 10 / 11 (x64) | 需要 WebView2 Runtime（Win10 需手动安装，Win11 自带） |
+| MinGW-w64 (GCC) | 13.0+ | 推荐 15.x，需支持 C++17 |
+| CMake | 3.15+ | 构建系统 |
+| Python | 3.6+ | 运行 `pack_assets.py` 资源打包脚本 |
+| NSIS | 3.x | 可选，仅用于生成安装包 |
+
+#### 编译步骤
+
 ```bash
-# 生成构建配置 (会自动调用 Python 脚本打包前端资源)
-cmake -B build -G "Ninja" 
+# 1. 克隆仓库
+git clone https://github.com/CEQ151/FileEcho.git
+cd FileEcho
 
-# 编译 Release 版本
+# 2. 打包前端资源为 C++ 头文件
+python pack_assets.py
+
+# 3. 创建构建目录并配置
+cmake -B build -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release
+
+# 4. 编译
 cmake --build build --config Release
+
+# 5. 运行
+build\FileEcho.exe
 ```
 
-3. **运行**: 
-   直接运行 `build/FileEcho.exe` 即可。该文件是独立运行的，您可以将其移动到任何地方。
+> ✅ 已启用**静态链接**，编译产物为单个 `FileEcho.exe`，无需任何外部 DLL。
+>
+> 也可直接使用 `build_release.bat` 一键完成所有步骤。
 
-## 📅 更新日志 (v1.0.4 —> v1.0.5-stable)
+#### 一键编译 + 打包
 
-* **[重大更新]** 实现了前端资源静态嵌入，生成的 `.exe` 不再依赖外部文件夹。
-* **[架构优化]** 重新组织了项目结构，将第三方依赖移至 `include/external`。
-* **[功能增强]** 添加了语言切换（中/英）与多主题支持。
-* **[体验优化]** 增加了文件夹选择上传功能。
+```bash
+# 一键编译，输出到 dist/ 目录
+build_release.bat
+
+# 生成安装包（需要安装 NSIS 并加入 PATH）
+makensis installer.nsi
+```
+
+---
+
+## 🏗️ 项目结构
+
+```
+FileEcho/
+├── CMakeLists.txt              # CMake 构建配置
+├── pack_assets.py              # 前端资源 → C++ 头文件打包脚本
+├── build_release.bat           # Windows 一键编译脚本
+├── installer.nsi               # NSIS 安装包脚本
+├── include/
+│   ├── external/               # 第三方 header-only 库
+│   │   ├── httplib.h           # cpp-httplib HTTP 服务器
+│   │   ├── json.hpp            # nlohmann/json
+│   │   ├── webview.h           # WebView 封装
+│   │   └── WebView2.h          # WebView2 API
+│   └── FileEcho/               # 项目头文件
+│       ├── ai_handler.hpp      # AI 处理器
+│       ├── filesystem.hpp      # 文件系统操作
+│       ├── webserver.hpp       # HTTP 服务器
+│       └── utils.hpp           # 工具函数
+├── src/
+│   ├── backend/
+│   │   ├── main.cpp            # 入口（WebView2 窗口 + HTTP 服务器启动）
+│   │   ├── webserver.cpp       # HTTP 路由 + 静态资源服务
+│   │   ├── ai_handler.cpp      # AI 多模型调用（WinHTTP, TLS 1.2）
+│   │   └── filesystem.cpp      # 递归扫描 + 文件树生成
+│   └── frontend/
+│       ├── index.html          # 主页面（Bootstrap 5 + KaTeX）
+│       ├── script.js           # 文件管理器核心逻辑
+│       ├── style.css           # 主样式（6 套主题 CSS 变量）
+│       ├── ai_addon.js         # AI 助手（聊天 / 设置 / Markdown / LaTeX）
+│       └── ai_addon.css        # AI 助手样式（主题自适应）
+└── resources/
+    ├── FileEcho.rc             # Windows 资源（图标 + 版本信息）
+    └── logo.ico                # 应用图标
+```
+
+---
+
+## 🔧 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 后端核心 | C++17, `std::filesystem` |
+| HTTP 服务 | [cpp-httplib](https://github.com/yhirose/cpp-httplib) (header-only) |
+| JSON | [nlohmann/json](https://github.com/nlohmann/json) (header-only) |
+| GUI 容器 | [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) |
+| AI 网络 | WinHTTP (TLS 1.2, 系统代理自动继承) |
+| 前端 | Vanilla JS (ES6+), HTML5, CSS3 |
+| UI 框架 | Bootstrap 5, FontAwesome 6 |
+| 数学渲染 | [KaTeX](https://katex.org/) 0.16.11 (CDN) |
+| 构建 | CMake 3.15+, MinGW-w64 |
+| 安装包 | NSIS 3 |
+
+---
+
+## 📋 AI 使用指南
+
+1. 点击右下角 🤖 悬浮球打开 AI 助手面板
+2. 点击 ⚙️ 齿轮进入设置，选择提供商和模型
+3. 填入 API Key（支持自定义 Base URL，用于 API 中转站）
+4. 点击 **测试连接** 确认配置正常
+5. 开始对话，或使用底部快捷按钮：
+   - 📊 **项目总结** — 分析整个项目结构
+   - 💡 **调整建议** — 生成文件清理建议
+   - 🔍 **代码分析** — 代码质量评估
+   - 📄 **文件摘要** — 勾选文件后生成摘要
+   - 🧠 **智能搜索** — AI 语义化文件搜索
+
+> 🔒 隐私说明：所有 API 请求直接从本机发出，API Key 仅保存在本地 `ai_config.json`，不经过任何第三方中间服务器。
+
+---
+
+## 📜 许可证
+
+[MIT License](LICENSE) © 2026 CEQ151

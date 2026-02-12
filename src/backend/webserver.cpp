@@ -7,6 +7,8 @@
 
 #include "FileEcho/webserver.hpp"
 #include "FileEcho/utils.hpp"     // 使用新工具
+#include "FileEcho/pdf_extractor.hpp"
+#include "FileEcho/doc_extractor.hpp"
 #include "FileEcho/frontend_resources.hpp"
 #ifdef _WIN32
 #include <shellapi.h>
@@ -23,6 +25,19 @@ using namespace std;
 namespace fs = std::filesystem;
 
 WebServer::WebServer() {
+    // 初始化 AI 处理器
+    ai_handler_ = std::make_unique<AI::AIHandler>();
+    ai_handler_->Initialize();
+
+    // 设置 AI 配置文件路径
+    char* appdata = getenv("APPDATA");
+    if (appdata) {
+        ai_config_path_ = std::string(appdata) + "\\FileEcho\\ai_config.json";
+        // 确保目录存在
+        fs::create_directories(std::string(appdata) + "\\FileEcho");
+        // 尝试加载已保存的配置
+        ai_handler_->LoadConfig(ai_config_path_);
+    }
 }
 
 WebServer::~WebServer() {
@@ -80,6 +95,18 @@ void WebServer::setup_routes() {
         res.set_content(reinterpret_cast<const char*>(style_css), style_css_len, "text/css");
     });
     
+    server_->Get("/ai_addon.js", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(reinterpret_cast<const char*>(ai_addon_js), ai_addon_js_len, "application/javascript");
+    });
+
+    server_->Get("/ai_addon.css", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(reinterpret_cast<const char*>(ai_addon_css), ai_addon_css_len, "text/css");
+    });
+
+    server_->Get("/logo.ico", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content(std::string(reinterpret_cast<const char*>(logo_ico), logo_ico_len), "image/x-icon");
+    });
+    
     server_->Post("/api/scan", [this](const httplib::Request& req, httplib::Response& res) {
         handle_scan(req, res);
     });
@@ -103,10 +130,52 @@ void WebServer::setup_routes() {
     server_->Get("/api/pick-folder", [this](const httplib::Request& req, httplib::Response& res) {
         handle_pick_folder(req, res);
     });
-}
+    
+    // File Operations
+    server_->Post("/api/file/read", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_file_read(req, res);
+    });
 
-void WebServer::handle_root(const httplib::Request&, httplib::Response& res) {
-    res.set_redirect("/index.html");
+    // AI 相关的路由
+    server_->Get("/api/ai/models", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_models(req, res);
+    });
+
+    server_->Get("/api/ai/config", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_config_get(req, res);
+    });
+
+    server_->Post("/api/ai/config", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_config_set(req, res);
+    });
+
+    server_->Delete("/api/ai/config", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_config_reset(req, res);
+    });
+
+    server_->Post("/api/ai/test-connection", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_test_connection(req, res);
+    });
+
+    server_->Post("/api/ai/chat", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_chat(req, res);
+    });
+
+    server_->Post("/api/ai/file-summary", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_file_summary(req, res);
+    });
+
+    server_->Post("/api/ai/project-summary", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_project_summary(req, res);
+    });
+
+    server_->Post("/api/ai/cleanup-suggestions", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_cleanup_suggestions(req, res);
+    });
+
+    server_->Post("/api/ai/code-analysis", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_code_analysis(req, res);
+    });
 }
 
 void WebServer::handle_scan(const httplib::Request& req, httplib::Response& res) {
@@ -136,10 +205,13 @@ void WebServer::handle_scan(const httplib::Request& req, httplib::Response& res)
         // 3. 执行扫描
         vector<FileInfo> files = FileSystemScanner::scan_directory(path_utf8, options);
 
-        // 4. 更新缓存
-        current_scan_.path = path_utf8;
-        current_scan_.files = files;
-        current_scan_.options = options;
+        // 4. 更新缓存（线程安全）
+        {
+            std::lock_guard<std::mutex> lock(scan_mutex_);
+            current_scan_.path = path_utf8;
+            current_scan_.files = files;
+            current_scan_.options = options;
+        }
 
         // 5. 构建响应
         json response;
@@ -167,6 +239,7 @@ void WebServer::handle_scan(const httplib::Request& req, httplib::Response& res)
 }
 
 void WebServer::handle_tree(const httplib::Request& req, httplib::Response& res) {
+    std::lock_guard<std::mutex> lock(scan_mutex_);
     if (current_scan_.files.empty()) {
         res.set_content(json({{"success", false}, {"message", "No scan data"}}).dump(), "application/json");
         return;
@@ -189,6 +262,7 @@ void WebServer::handle_tree(const httplib::Request& req, httplib::Response& res)
 }
 
 void WebServer::handle_download(const httplib::Request& req, httplib::Response& res) {
+    std::lock_guard<std::mutex> lock(scan_mutex_);
     if (current_scan_.files.empty()) {
         res.set_content("No data to download", "text/plain");
         return;
@@ -304,4 +378,400 @@ void WebServer::handle_pick_folder(const httplib::Request& req, httplib::Respons
 
     CoUninitialize();
 #endif
+}
+
+void WebServer::handle_file_read(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto j = json::parse(req.body);
+        string file_path = j.value("path", "");
+        
+        // max_size: 0 = unlimited, default 100KB
+        int max_size = j.value("max_size", 100000);
+        
+        if (file_path.empty()) {
+            res.set_content(json{{"success", false}, {"message", "Path required"}}.dump(), "application/json");
+            return;
+        }
+
+        if (!fs::exists(file_path)) {
+            res.set_content(json{{"success", false}, {"message", "File not found"}}.dump(), "application/json");
+            return;
+        }
+        
+        if (!fs::is_regular_file(file_path)) {
+            res.set_content(json{{"success", false}, {"message", "Not a regular file"}}.dump(), "application/json");
+            return;
+        }
+
+        // Check if PDF file
+        if (PDF::IsPdfFile(file_path)) {
+            size_t pdfMaxChars = max_size > 0 ? (size_t)max_size : 0;
+            std::string pdfText = PDF::ExtractText(file_path, pdfMaxChars);
+            auto fileSize = fs::file_size(file_path);
+            res.set_content(json{
+                {"success", true},
+                {"content", pdfText},
+                {"size", fileSize},
+                {"truncated", false},
+                {"is_binary", false},
+                {"is_pdf", true}
+            }.dump(), "application/json");
+            return;
+        }
+
+        // Check if Office document (DOCX, XLSX, PPTX)
+        if (DocExtractor::IsOfficeFile(file_path)) {
+            size_t docMaxChars = max_size > 0 ? (size_t)max_size : 0;
+            std::string docText = DocExtractor::ExtractText(file_path, docMaxChars);
+            auto fileSize = fs::file_size(file_path);
+            res.set_content(json{
+                {"success", true},
+                {"content", docText},
+                {"size", fileSize},
+                {"truncated", false},
+                {"is_binary", false},
+                {"is_office", true}
+            }.dump(), "application/json");
+            return;
+        }
+        
+        std::ifstream file(file_path, std::ios::binary);
+        if (!file.is_open()) {
+            res.set_content(json{{"success", false}, {"message", "Cannot open file"}}.dump(), "application/json");
+            return;
+        }
+
+        file.seekg(0, std::ios::end);
+        size_t file_size = file.tellg();
+        file.seekg(0, std::ios::beg);
+        
+        bool truncated = false;
+        size_t read_size = file_size;
+        
+        if (max_size > 0 && file_size > (size_t)max_size) {
+            read_size = max_size;
+            truncated = true;
+        }
+        
+        std::string content(read_size, '\0');
+        file.read(&content[0], read_size);
+        
+        bool is_binary = false;
+        for (char c : content) {
+            if (c == '\0') {
+                is_binary = true;
+                break;
+            }
+        }
+        
+        if (is_binary) {
+             res.set_content(json{
+                {"success", true}, 
+                {"content", "[Binary File]"}, 
+                {"size", file_size},
+                {"truncated", false},
+                {"is_binary", true}
+            }.dump(), "application/json");
+        } else {
+            res.set_content(json{
+                {"success", true}, 
+                {"content", content}, 
+                {"size", file_size},
+                {"truncated", truncated},
+                {"is_binary", false}
+            }.dump(), "application/json");
+        }
+        
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+
+void WebServer::handle_ai_models(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto models = AI::AIHandler::GetSupportedModels();
+
+        json response = {
+            {"success", true},
+            {"models", json::array()}
+        };
+
+        for (const auto& model : models) {
+            response["models"].push_back({
+                {"provider", static_cast<int>(model.provider)},
+                {"name", model.name},
+                {"model_id", model.model_id},
+                {"base_url", model.base_url},
+                {"temperature", model.temperature},
+                {"max_tokens", model.max_tokens},
+                {"enabled", model.enabled}
+            });
+        }
+
+        res.set_content(response.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_config_get(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto config = ai_handler_->GetCurrentConfig();
+
+        json response = {
+            {"success", true},
+            {"config", {
+                {"provider", static_cast<int>(config.provider)},
+                {"name", config.name},
+                {"model_id", config.model_id},
+                {"base_url", config.base_url},
+                {"temperature", config.temperature},
+                {"max_tokens", config.max_tokens},
+                {"enabled", config.enabled},
+                {"has_api_key", !config.api_key.empty()},
+                {"max_content_chars", config.max_content_chars},
+                {"max_file_count", config.max_file_count}
+            }}
+        };
+
+        res.set_content(response.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_config_set(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto j = json::parse(req.body);
+
+        AI::AIModelConfig config = ai_handler_->GetCurrentConfig();
+        config.provider = static_cast<AI::AIProvider>(j.value("provider", static_cast<int>(config.provider)));
+        config.name = j.value("name", config.name);
+        // Only update api_key if provided (non-empty), preserve existing key otherwise
+        if (j.contains("api_key") && !j["api_key"].get<std::string>().empty()) {
+            config.api_key = j["api_key"].get<std::string>();
+        }
+        config.base_url = j.value("base_url", config.base_url);
+        config.model_id = j.value("model_id", config.model_id);
+        config.temperature = j.value("temperature", config.temperature);
+        config.max_tokens = j.value("max_tokens", config.max_tokens);
+        config.enabled = j.value("enabled", config.enabled);
+        config.max_content_chars = j.value("max_content_chars", config.max_content_chars);
+        config.max_file_count = j.value("max_file_count", config.max_file_count);
+
+        if (ai_handler_->SetModelConfig(config)) {
+            // 保存配置到文件
+            ai_handler_->SaveConfig(ai_config_path_);
+
+            res.set_content(json{{"success", true}, {"message", "Configuration saved successfully"}}.dump(), "application/json");
+        } else {
+            res.set_content(json{{"success", false}, {"message", "Failed to set configuration"}}.dump(), "application/json");
+        }
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_config_reset(const httplib::Request& req, httplib::Response& res) {
+    try {
+        // Delete the config file
+        if (fs::exists(ai_config_path_)) {
+            fs::remove(ai_config_path_);
+        }
+
+        // Reset in-memory config to defaults
+        AI::AIModelConfig empty_config;
+        empty_config.provider = AI::AIProvider::OPENAI;
+        empty_config.name = "";
+        empty_config.api_key = "";
+        empty_config.base_url = "";
+        empty_config.model_id = "";
+        empty_config.temperature = 0.7;
+        empty_config.max_tokens = 4096;
+        empty_config.enabled = true;
+        empty_config.max_content_chars = 0;
+        empty_config.max_file_count = 0;
+        ai_handler_->SetModelConfig(empty_config);
+
+        res.set_content(json{{"success", true}, {"message", "Configuration reset"}}.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_test_connection(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto result = ai_handler_->TestConnection();
+        json response = {
+            {"success", result.success},
+            {"message", result.success ? "Connection successful" : result.error}
+        };
+        res.set_content(response.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_chat(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto j = json::parse(req.body);
+        string message = j.value("message", "");
+        string language = j.value("language", "en");
+        json context = j.value("context", json::object());
+
+        if (message.empty()) {
+            res.set_content(json{{"success", false}, {"message", "Message is required"}}.dump(), "application/json");
+            return;
+        }
+
+        auto response = ai_handler_->GenerateChatResponse(message, context, language);
+
+        json result = {
+            {"success", response.success},
+            {"content", response.content},
+            {"prompt_tokens", response.prompt_tokens},
+            {"completion_tokens", response.completion_tokens},
+            {"total_tokens", response.total_tokens}
+        };
+
+        if (!response.success) {
+            result["error"] = response.error;
+        }
+
+        res.set_content(result.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_file_summary(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto j = json::parse(req.body);
+        string file_path = j.value("path", "");
+        string content = j.value("content", "");
+        string language = j.value("language", "en");
+        bool brief = j.value("brief", false);
+        
+        // If content is not provided, try to read file
+        if (content.empty() && !file_path.empty() && fs::exists(file_path)) {
+            // Use smart content reading: handle PDF, DOCX, XLSX, PPTX
+            if (PDF::IsPdfFile(file_path)) {
+                content = PDF::ExtractText(file_path, 0);
+            } else if (DocExtractor::IsOfficeFile(file_path)) {
+                content = DocExtractor::ExtractText(file_path, 0);
+            } else {
+                std::ifstream file(file_path, std::ios::binary);
+                if (file.is_open()) {
+                    // Read file and check if binary
+                    std::string raw((std::istreambuf_iterator<char>(file)),
+                                     std::istreambuf_iterator<char>());
+                    bool is_binary = false;
+                    for (char c : raw) {
+                        if (c == '\0') { is_binary = true; break; }
+                    }
+                    content = is_binary ? "[Binary File]" : raw;
+                }
+            }
+        }
+
+        auto response = ai_handler_->GenerateFileSummary(fs::path(file_path).filename().string(), file_path, content, language, brief);
+        
+        json result = {
+            {"success", response.success},
+            {"content", response.content},
+            {"prompt_tokens", response.prompt_tokens},
+            {"completion_tokens", response.completion_tokens},
+            {"total_tokens", response.total_tokens}
+        };
+        
+        if (!response.success) {
+            result["error"] = response.error;
+        }
+        
+        res.set_content(result.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_project_summary(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto j = json::parse(req.body);
+        string path = j.value("path", "");
+        string language = j.value("language", "en");
+        string file_tree = j.value("file_tree", "");
+        
+        auto response = ai_handler_->GenerateProjectSummary(path, file_tree, language);
+        
+        json result = {
+            {"success", response.success},
+            {"content", response.content},
+            {"prompt_tokens", response.prompt_tokens},
+            {"completion_tokens", response.completion_tokens},
+            {"total_tokens", response.total_tokens}
+        };
+        
+        if (!response.success) {
+            result["error"] = response.error;
+        }
+        
+        res.set_content(result.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_cleanup_suggestions(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto j = json::parse(req.body);
+        string path = j.value("path", "");
+        string language = j.value("language", "en");
+        string file_tree = j.value("file_tree", "");
+
+        auto response = ai_handler_->GenerateCleanupSuggestions(path, file_tree, language);
+        
+        json result = {
+            {"success", response.success},
+            {"content", response.content},
+            {"prompt_tokens", response.prompt_tokens},
+            {"completion_tokens", response.completion_tokens},
+            {"total_tokens", response.total_tokens}
+        };
+        
+        if (!response.success) {
+            result["error"] = response.error;
+        }
+        
+        res.set_content(result.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_code_analysis(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto j = json::parse(req.body);
+        string path = j.value("path", "");
+        string language = j.value("language", "en");
+        string file_tree = j.value("file_tree", "");
+
+        auto response = ai_handler_->GenerateCodeAnalysis(path, file_tree, language);
+        
+        json result = {
+            {"success", response.success},
+            {"content", response.content},
+            {"prompt_tokens", response.prompt_tokens},
+            {"completion_tokens", response.completion_tokens},
+            {"total_tokens", response.total_tokens}
+        };
+        
+        if (!response.success) {
+            result["error"] = response.error;
+        }
+        
+        res.set_content(result.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
 }

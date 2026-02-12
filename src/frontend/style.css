@@ -103,6 +103,7 @@
     --bg-primary: rgba(11, 14, 20, 0.8); /* 增加基础遮盖力，不再完全透明 */
     --bg-secondary: rgba(16, 20, 28, 0.4);
     --panel-bg: rgba(20, 25, 35, 0.7); /* 面板使用玻璃质感 */
+    --thead-bg: #0b0e14; /* 表头不透明，防止内容穿透 */
     --text-main: #e2e8f0;
     --text-muted: #b4c6ef; /* 提高 muted 文字亮度，使其更清晰 */
     --text-primary: #ffffff; 
@@ -546,7 +547,7 @@ body {
 .sticky-header thead th {
     position: sticky;
     top: 0;
-    background: var(--bg-primary);
+    background-color: var(--thead-bg, var(--bg-primary)) !important;
     z-index: 10;
     font-size: 0.75rem;
     text-transform: uppercase;
@@ -559,8 +560,13 @@ body {
     white-space: nowrap;
 }
 
+.sticky-header tbody td {
+    position: relative;
+    z-index: 1;
+}
+
 .sticky-header thead th:hover {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-secondary) !important;
     color: var(--accent);
 }
 
@@ -580,6 +586,18 @@ body {
     opacity: 1;
 }
 
+.sticky-header thead th.col-size {
+    width: 80px;
+    min-width: 80px;
+    text-align: right;
+}
+
+.sticky-header thead th.col-depth {
+    width: 50px;
+    min-width: 50px;
+    text-align: right;
+}
+
 #file-table-body {
     transition: opacity 0.15s ease-in-out;
 }
@@ -588,11 +606,25 @@ body {
     padding: 0.2rem 0.5rem !important;
     font-size: 0.8rem;
     vertical-align: middle;
-    max-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     color: var(--text-primary);
+}
+
+/* Column widths: Name gets remaining space, Size and Depth fixed */
+.col-size {
+    width: 80px;
+    min-width: 80px;
+    max-width: 80px;
+    text-align: right;
+}
+
+.col-depth {
+    width: 50px;
+    min-width: 50px;
+    max-width: 50px;
+    text-align: right;
 }
 
 /* Global Rounded Corners & Buttons */

@@ -1,9 +1,10 @@
-# 忽略编译目录
+# Build output
 build/
 cmake-build-*/
 out/
+dist/
 
-# 忽略 C++ 编译临时文件
+# C++ compile artifacts
 *.exe
 *.o
 *.obj
@@ -11,13 +12,28 @@ out/
 *.lib
 *.a
 
-# 忽略编辑器配置
+# Generated asset headers (run `python pack_assets.py` to regenerate)
+src/backend/assets.hpp
+include/FileEcho/frontend_resources.hpp
+
+# Editor / IDE
 .vscode/
 .idea/
 *.swp
+*.sln
+*.vcxproj*
 
-# 忽略系统文件
+# OS files
 .DS_Store
 Thumbs.db
-
 *.aps
+
+# Temp / Backup
+*.bak
+*.tmp
+*.log
+
+# Node (legacy, no longer used)
+node_modules/
+package-lock.json
+__pycache__/
