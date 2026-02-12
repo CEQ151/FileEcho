@@ -18,6 +18,10 @@
 
 ## ✨ 功能亮点
 
+<img width="2559" height="1475" alt="1" src="https://github.com/user-attachments/assets/6bdbe099-72aa-42df-b23e-6e52e6bf4796" />
+
+<img width="2559" height="1475" alt="2" src="https://github.com/user-attachments/assets/a6506aa9-1b81-4cba-9568-289c6433aff9" />
+
 ### 📁 文件扫描与管理
 - **极速递归扫描** — 基于 C++17 `std::filesystem`，毫秒级遍历大型目录
 - **智能文件树** — 路径剪枝搜索、交互式折叠、关键词高亮
