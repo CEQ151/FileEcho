@@ -18,6 +18,10 @@
 
 ## ✨ Features
 
+<img width="2559" height="1475" alt="1" src="https://github.com/user-attachments/assets/4d22b72e-ea39-4f51-99e8-f44922be9d7d" />
+
+<img width="2559" height="1475" alt="2" src="https://github.com/user-attachments/assets/fb6890e5-2d18-4fb8-b8cd-5359290426ee" />
+
 ### 📁 File Scanning & Management
 - **Ultra-fast recursive scanning** — Built on C++17 `std::filesystem`, millisecond-level traversal
 - **Smart file tree** — Path-pruning search, interactive collapse/expand, keyword highlighting
