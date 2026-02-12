@@ -75,6 +75,9 @@ public:
     // 生成代码分析
     AIResponse GenerateCodeAnalysis(const std::string& projectPath, const std::string& fileTree, const std::string& language = "en");
 
+    // 生成文件树注释
+    AIResponse GenerateTreeAnnotations(const std::string& projectPath, const std::string& fileTree, const std::string& language = "en");
+
     // 保存配置到文件
     bool SaveConfig(const std::string& configPath);
 

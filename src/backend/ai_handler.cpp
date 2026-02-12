@@ -431,6 +431,40 @@ AIResponse AIHandler::GenerateCodeAnalysis(const std::string& projectPath, const
     return GenerateChatResponse(prompt, {}, language);
 }
 
+AIResponse AIHandler::GenerateTreeAnnotations(const std::string& projectPath, const std::string& fileTree, const std::string& language) {
+    if (fileTree.empty()) {
+        return {false, "", language == "zh" ? "未找到文件，请先扫描目录。" : "No files found. Please scan a directory first."};
+    }
+
+    std::string prompt;
+    if (language == "zh") {
+        prompt = "你是一个代码分析AI。我将提供一个项目的文件树，请为每个文件和文件夹写一个简短的中文注释（不超过15个字）。\n\n"
+                 "项目路径：" + projectPath + "\n\n"
+                 "文件树：\n" + fileTree + "\n\n"
+                 "**输出格式要求（严格遵守）：**\n"
+                 "- 每行格式为：`文件名|||注释`\n"
+                 "- 例如：`main.cpp|||程序入口`\n"
+                 "- 例如：`src/|||源代码目录`\n"
+                 "- 不要输出任何其他内容，不要有标题、解释或Markdown格式\n"
+                 "- 每个文件名（含目录名）只出现一次\n"
+                 "- 目录名不要带斜杠\n"
+                 "- 根据文件名和项目上下文推断用途，注释务必精炼";
+    } else {
+        prompt = "You are a code analysis AI. I will provide a project file tree. Write a brief English annotation (max 10 words) for each file and folder.\n\n"
+                 "Project Path: " + projectPath + "\n\n"
+                 "File Tree:\n" + fileTree + "\n\n"
+                 "**Output format (strictly follow):**\n"
+                 "- Each line: `filename|||annotation`\n"
+                 "- Example: `main.cpp|||Application entry point`\n"
+                 "- Example: `src/|||Source code directory`\n"
+                 "- Do NOT output anything else — no titles, explanations, or Markdown\n"
+                 "- Each filename (including directory name) appears exactly once\n"
+                 "- Directory names without trailing slash\n"
+                 "- Infer purpose from filename and project context, keep annotations concise";
+    }
+    return GenerateChatResponse(prompt, {}, language);
+}
+
 AIResponse AIHandler::TestConnection() {
     AIResponse response;
     response.success = false;

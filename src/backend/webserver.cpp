@@ -176,6 +176,10 @@ void WebServer::setup_routes() {
     server_->Post("/api/ai/code-analysis", [this](const httplib::Request& req, httplib::Response& res) {
         handle_ai_code_analysis(req, res);
     });
+
+    server_->Post("/api/ai/tree-annotations", [this](const httplib::Request& req, httplib::Response& res) {
+        handle_ai_tree_annotations(req, res);
+    });
 }
 
 void WebServer::handle_scan(const httplib::Request& req, httplib::Response& res) {
@@ -757,6 +761,33 @@ void WebServer::handle_ai_code_analysis(const httplib::Request& req, httplib::Re
         string file_tree = j.value("file_tree", "");
 
         auto response = ai_handler_->GenerateCodeAnalysis(path, file_tree, language);
+        
+        json result = {
+            {"success", response.success},
+            {"content", response.content},
+            {"prompt_tokens", response.prompt_tokens},
+            {"completion_tokens", response.completion_tokens},
+            {"total_tokens", response.total_tokens}
+        };
+        
+        if (!response.success) {
+            result["error"] = response.error;
+        }
+        
+        res.set_content(result.dump(), "application/json");
+    } catch (const exception& e) {
+        res.set_content(json{{"success", false}, {"message", e.what()}}.dump(), "application/json");
+    }
+}
+
+void WebServer::handle_ai_tree_annotations(const httplib::Request& req, httplib::Response& res) {
+    try {
+        auto j = json::parse(req.body);
+        string path = j.value("path", "");
+        string language = j.value("language", "en");
+        string file_tree = j.value("file_tree", "");
+
+        auto response = ai_handler_->GenerateTreeAnnotations(path, file_tree, language);
         
         json result = {
             {"success", response.success},

@@ -51,6 +51,7 @@ const aiT_ = {
         codeAnalysis: 'Code Analysis',
         fileSummary: 'File Summary',
         smartSearch: 'Smart Search',
+        annotateTree: 'Annotate Tree',
         typeMessage: 'Type your message...',
         thinking: 'Thinking...',
         items: 'items',
@@ -148,6 +149,7 @@ const aiT_ = {
         codeAnalysis: '代码分析',
         fileSummary: '文件摘要',
         smartSearch: '智能搜索',
+        annotateTree: '注释树',
         typeMessage: '输入消息...',
         thinking: '思考中...',
         items: '项',
@@ -350,8 +352,8 @@ function refreshAiLang() {
     const limitHint = d.querySelector('.ai-limit-hint');
     if (limitHint) limitHint.textContent = aiT('noLimitHint');
     const chips = d.querySelectorAll('.ai-chip');
-    const ck = ['projectSummary', 'suggestions', 'codeAnalysis', 'fileSummary', 'smartSearch'];
-    const ci = ['fa-project-diagram', 'fa-lightbulb', 'fa-code', 'fa-file-alt', 'fa-brain'];
+    const ck = ['projectSummary', 'suggestions', 'codeAnalysis', 'fileSummary', 'smartSearch', 'annotateTree'];
+    const ci = ['fa-project-diagram', 'fa-lightbulb', 'fa-code', 'fa-file-alt', 'fa-brain', 'fa-tags'];
     chips.forEach((chip, i) => { if (ck[i]) chip.innerHTML = `<i class="fas ${ci[i]}"></i> ${aiT(ck[i])}`; });
     applyConfigToUI();
     updateAiContextDisplay();
@@ -460,6 +462,7 @@ function createAiElements() {
                 <span class="ai-chip" data-command="code-analysis"><i class="fas fa-code"></i> ${aiT('codeAnalysis')}</span>
                 <span class="ai-chip" data-command="file-summary"><i class="fas fa-file-alt"></i> ${aiT('fileSummary')}</span>
                 <span class="ai-chip" data-command="semantic-search"><i class="fas fa-brain"></i> ${aiT('smartSearch')}</span>
+                <span class="ai-chip" data-command="annotate-tree"><i class="fas fa-tags"></i> ${aiT('annotateTree')}</span>
             </div>
         </div>
         <div class="ai-drawer-footer">
@@ -939,6 +942,7 @@ async function handleAiCommand(command) {
         case 'project-summary': endpoint='/project-summary'; label=aiT('projectSummary'); break;
         case 'cleanup-suggestions': endpoint='/cleanup-suggestions'; label=aiT('suggestions'); break;
         case 'code-analysis': endpoint='/code-analysis'; label=aiT('codeAnalysis'); break;
+        case 'annotate-tree': handleAnnotateTree(ctx); return;
         case 'file-summary': handleFileSummary(ctx); return;
         case 'semantic-search': handleSemanticSearch(ctx); return;
     }
@@ -950,6 +954,108 @@ async function handleAiCommand(command) {
         const d = await r.json(); removeTypingIndicator();
         if (d.success) { addMessageToChat('ai', d.content); updateTokenDisplay(d); } else addMessageToChat('ai', 'Error: ' + (d.error || d.message));
     } catch (e) { removeTypingIndicator(); addMessageToChat('ai', 'Network Error: ' + e.message); }
+}
+
+// ==========================================
+// Annotate Tree (AI-generated file comments)
+// ==========================================
+async function handleAnnotateTree(ctx) {
+    const fileTree = buildFileTree(ctx.files, ctx.path);
+    const payload = { path: ctx.path, language: getCurrentLang(), file_tree: fileTree };
+
+    addMessageToChat('user', '🏷️ ' + aiT('analyzing') + aiT('annotateTree') + '...');
+    showTypingIndicator();
+
+    try {
+        const r = await fetch(`${state.apiBaseUrl}/tree-annotations`, {
+            method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload)
+        });
+        const d = await r.json();
+        removeTypingIndicator();
+
+        if (!d.success) { addMessageToChat('ai', 'Error: ' + (d.error || d.message)); return; }
+        updateTokenDisplay(d);
+
+        // Parse AI response: each line is "filename|||comment"
+        const annotations = {};
+        (d.content || '').split('\n').forEach(line => {
+            const sep = line.indexOf('|||');
+            if (sep > 0) {
+                const name = line.substring(0, sep).trim();
+                const comment = line.substring(sep + 3).trim();
+                if (name && comment) annotations[name] = comment;
+            }
+        });
+
+        // Build annotated tree using the frontend tree generator
+        const fm = window.fileManager;
+        if (!fm || fm.currentFiles.length === 0) return;
+
+        const files = fm.currentFiles;
+        // Sort in hierarchical pre-order (same as generateTreeContent)
+        const sorted = [...files].sort((a, b) => {
+            const partsA = a.path.split(/[/\\]/).filter(Boolean);
+            const partsB = b.path.split(/[/\\]/).filter(Boolean);
+            const len = Math.min(partsA.length, partsB.length);
+            for (let i = 0; i < len; i++) {
+                if (partsA[i] !== partsB[i]) {
+                    const isDirA = (i < partsA.length - 1) || a.is_directory;
+                    const isDirB = (i < partsB.length - 1) || b.is_directory;
+                    if (isDirA !== isDirB) return isDirA ? -1 : 1;
+                    return partsA[i].localeCompare(partsB[i], undefined, { numeric: true });
+                }
+            }
+            return partsA.length - partsB.length;
+        });
+
+        // Generate tree lines with annotations, then align comments
+        const isLastAtDepth = [];
+        let rootName = fm.currentPath.split(/[/\\]/).filter(Boolean).pop() || 'root';
+        rootName += '/';
+
+        const lines = [];
+        // Root line
+        const rootComment = annotations[rootName] || annotations[rootName.replace(/\/$/, '')] || '';
+        lines.push({ text: rootName, comment: rootComment });
+
+        for (let i = 0; i < sorted.length; i++) {
+            const file = sorted[i];
+            const isLast = (i === sorted.length - 1) || (sorted[i + 1].depth < file.depth);
+            isLastAtDepth[file.depth] = isLast;
+
+            let prefix = '';
+            for (let d = 1; d < file.depth; d++) {
+                prefix += isLastAtDepth[d] ? '    ' : '│   ';
+            }
+            prefix += isLast ? '└── ' : '├── ';
+
+            const fileName = file.name + (file.is_directory ? '/' : '');
+            const comment = annotations[file.name] || annotations[fileName] || '';
+            lines.push({ text: prefix + fileName, comment: comment });
+        }
+
+        // Calculate alignment column: max text width + 2 spaces padding
+        const maxLen = lines.reduce((m, l) => Math.max(m, l.text.length), 0);
+        const alignCol = maxLen + 2;
+
+        // Build final output with aligned # comments
+        let output = '```\n';
+        for (const l of lines) {
+            if (l.comment) {
+                const padding = ' '.repeat(Math.max(2, alignCol - l.text.length));
+                output += l.text + padding + '# ' + l.comment + '\n';
+            } else {
+                output += l.text + '\n';
+            }
+        }
+        output += '```';
+
+        addMessageToChat('ai', output);
+
+    } catch (e) {
+        removeTypingIndicator();
+        addMessageToChat('ai', 'Network Error: ' + e.message);
+    }
 }
 
 // ==========================================

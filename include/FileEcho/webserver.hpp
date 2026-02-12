@@ -53,6 +53,7 @@ private:
     void handle_ai_project_summary(const httplib::Request& req, httplib::Response& res);
     void handle_ai_cleanup_suggestions(const httplib::Request& req, httplib::Response& res);
     void handle_ai_code_analysis(const httplib::Request& req, httplib::Response& res);
+    void handle_ai_tree_annotations(const httplib::Request& req, httplib::Response& res);
     
     // File Operations
     void handle_file_read(const httplib::Request& req, httplib::Response& res);
