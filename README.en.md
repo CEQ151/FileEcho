@@ -49,7 +49,7 @@
 - **Chat export** — Export as `.txt` or `.md`
 - **Smart hover summaries** — Hover over files/folders for AI-generated summary cards
 - **Context-aware** — Auto-detects filenames in messages and reads their content
-- **Multi-function panel** — Project summary / code analysis / cleanup suggestions / smart search
+- **Multi-function panel** — Project summary / code analysis / cleanup suggestions / smart search / annotate tree
 - **Temperature control** — Precise / Balanced / Creative presets + slider fine-tuning
 
 ### 🎨 Customization
@@ -113,27 +113,43 @@ build_release.bat
 
 ```
 FileEcho/
-├── CMakeLists.txt              # CMake build configuration
-├── pack_assets.py              # Frontend → C++ header packing script
-├── build_release.bat           # Windows one-click build script
+├── CMakeLists.txt                # CMake build configuration
+├── pack_assets.py                # Frontend → C++ header packing script
+├── build_release.bat             # Windows one-click build script
+├── CHANGELOG.md                  # Version changelog
+├── USER_MANUAL.md                # User manual (Chinese)
 ├── include/
-│   ├── external/               # Third-party header-only libraries
-│   └── FileEcho/               # Project headers
+│   ├── external/                 # Third-party header-only libraries
+│   │   ├── httplib.h             # cpp-httplib HTTP server
+│   │   ├── json.hpp              # nlohmann/json
+│   │   ├── webview.h             # WebView wrapper
+│   │   ├── WebView2.h            # WebView2 API
+│   │   └── deflate_inflate.h     # zlib decompression (PDF extraction)
+│   └── FileEcho/                 # Project headers
+│       ├── ai_handler.hpp        # AI handler
+│       ├── filesystem.hpp        # Filesystem operations
+│       ├── webserver.hpp         # HTTP server
+│       ├── pdf_extractor.hpp     # PDF text extraction
+│       ├── doc_extractor.hpp     # Office document extraction
+│       └── utils.hpp             # Utilities
 ├── src/
 │   ├── backend/
-│   │   ├── main.cpp            # Entry point (WebView2 + HTTP server)
-│   │   ├── webserver.cpp       # HTTP routes + static resource serving
-│   │   ├── ai_handler.cpp      # Multi-model AI calls (WinHTTP, TLS 1.2)
-│   │   └── filesystem.cpp      # Recursive scan + file tree generation
+│   │   ├── main.cpp              # Entry point (WebView2 + HTTP server)
+│   │   ├── webserver.cpp         # HTTP routes + static resource serving
+│   │   ├── ai_handler.cpp        # Multi-model AI calls (WinHTTP, TLS 1.2)
+│   │   ├── filesystem.cpp        # Recursive scan + file tree generation
+│   │   ├── pdf_extractor.cpp     # PDF text parsing
+│   │   └── doc_extractor.cpp     # DOCX/XLSX/PPTX parsing
 │   └── frontend/
-│       ├── index.html          # Main page (Bootstrap 5 + KaTeX)
-│       ├── script.js           # File manager core logic
-│       ├── style.css           # Main styles (6 theme CSS variables)
-│       ├── ai_addon.js         # AI assistant (chat / settings / Markdown / LaTeX)
-│       └── ai_addon.css        # AI assistant styles (theme-adaptive)
+│       ├── index.html            # Main page (Bootstrap 5 + KaTeX)
+│       ├── script.js             # File manager core logic
+│       ├── style.css             # Main styles (6 theme CSS variables)
+│       ├── ai_addon.js           # AI assistant (chat / settings / Markdown / LaTeX)
+│       └── ai_addon.css          # AI assistant styles (theme-adaptive)
 └── resources/
-    ├── FileEcho.rc             # Windows resource (icon + version info)
-    └── logo.ico                # Application icon
+    ├── FileEcho.rc               # Windows resource (icon + version info)
+    ├── FileEcho.manifest         # UAC manifest (asInvoker)
+    └── logo.ico                  # Application icon
 ```
 
 ---
@@ -151,7 +167,6 @@ FileEcho/
 | UI Framework | Bootstrap 5, FontAwesome 6 |
 | Math Rendering | [KaTeX](https://katex.org/) 0.16.11 (CDN) |
 | Build System | CMake 3.15+, MinGW-w64 |
-| Installer | NSIS 3 |
 
 ---
 
