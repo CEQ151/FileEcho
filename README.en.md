@@ -61,15 +61,11 @@
 
 ## 🚀 Quick Start
 
-### Option 1: Download Installer (Recommended)
+### Option 1: Direct Download (Recommended)
 
-Download `FileEcho-v1.1.1-Setup.exe` from [Releases](https://github.com/CEQ151/FileEcho/releases) and run it.
+Download `FileEcho.exe` from [Releases](https://github.com/CEQ151/FileEcho/releases) and run it directly. No installation needed.
 
-### Option 2: Portable Version
-
-Download `FileEcho-v1.1.1-portable.zip` from Releases, extract, and run `FileEcho.exe`.
-
-### Option 3: Build from Source
+### Option 2: Build from Source
 
 #### Prerequisites
 
@@ -79,7 +75,6 @@ Download `FileEcho-v1.1.1-portable.zip` from Releases, extract, and run `FileEch
 | MinGW-w64 (GCC) | 13.0+ | 15.x recommended, C++17 support required |
 | CMake | 3.15+ | Build system |
 | Python | 3.6+ | For `pack_assets.py` resource packing script |
-| NSIS | 3.x | Optional, for generating installer |
 
 #### Build Steps
 
@@ -105,14 +100,11 @@ build\FileEcho.exe
 >
 > Or use `build_release.bat` to automate everything.
 
-#### One-Click Build + Package
+#### One-Click Build
 
 ```bash
 # Build and collect to dist/
 build_release.bat
-
-# Generate installer (requires NSIS in PATH)
-makensis installer.nsi
 ```
 
 ---
@@ -124,7 +116,6 @@ FileEcho/
 ├── CMakeLists.txt              # CMake build configuration
 ├── pack_assets.py              # Frontend → C++ header packing script
 ├── build_release.bat           # Windows one-click build script
-├── installer.nsi               # NSIS installer script
 ├── include/
 │   ├── external/               # Third-party header-only libraries
 │   └── FileEcho/               # Project headers

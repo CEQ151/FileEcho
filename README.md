@@ -68,15 +68,11 @@
 
 ## 🚀 快速开始
 
-### 方式一：下载安装包（推荐）
+### 方式一：直接下载（推荐）
 
-从 [Releases](https://github.com/CEQ151/FileEcho/releases) 下载 `FileEcho-v1.1.1-Setup.exe`，双击安装即可。
+从 [Releases](https://github.com/CEQ151/FileEcho/releases) 下载 `FileEcho.exe`，双击即可运行，无需安装。
 
-### 方式二：下载便携版
-
-从 Releases 下载 `FileEcho-v1.1.1-portable.zip`，解压后运行 `FileEcho.exe`。
-
-### 方式三：从源码编译
+### 方式二：从源码编译
 
 #### 环境要求
 
@@ -86,7 +82,6 @@
 | MinGW-w64 (GCC) | 13.0+ | 推荐 15.x，需支持 C++17 |
 | CMake | 3.15+ | 构建系统 |
 | Python | 3.6+ | 运行 `pack_assets.py` 资源打包脚本 |
-| NSIS | 3.x | 可选，仅用于生成安装包 |
 
 #### 编译步骤
 
@@ -112,14 +107,11 @@ build\FileEcho.exe
 >
 > 也可直接使用 `build_release.bat` 一键完成所有步骤。
 
-#### 一键编译 + 打包
+#### 一键编译
 
 ```bash
 # 一键编译，输出到 dist/ 目录
 build_release.bat
-
-# 生成安装包（需要安装 NSIS 并加入 PATH）
-makensis installer.nsi
 ```
 
 ---
@@ -131,7 +123,6 @@ FileEcho/
 ├── CMakeLists.txt              # CMake 构建配置
 ├── pack_assets.py              # 前端资源 → C++ 头文件打包脚本
 ├── build_release.bat           # Windows 一键编译脚本
-├── installer.nsi               # NSIS 安装包脚本
 ├── include/
 │   ├── external/               # 第三方 header-only 库
 │   │   ├── httplib.h           # cpp-httplib HTTP 服务器
